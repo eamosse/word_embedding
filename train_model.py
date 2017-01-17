@@ -14,7 +14,7 @@ import numpy
 
 # classifier
 from sklearn import svm
-from sklearn.naive_bayes import  BaseNB
+from sklearn.naive_bayes import  GaussianNB
 from sklearn.linear_model import LogisticRegression
 
 import logging
@@ -80,7 +80,6 @@ def createModel(sources, name):
     return model
 
 def train(args):
-    print(args)
     if args.force:
         log.info('generating the files...')
         FileHelper.generate(type=args.type, ontology=args.ontology)
@@ -108,7 +107,8 @@ def train(args):
 
     log.info('Fitting the model')
     #classifier = svm.SVC(kernel="rbf")
-    classifier = BaseNB()
+    print(train_arrays)
+    classifier = GaussianNB()
     classifier.fit(train_arrays, train_labels)
     test(classifier=classifier,args=args)
 
@@ -146,8 +146,8 @@ def test(classifier,args):
 
 if __name__ == "__main__":
     parser = OptionParser('''%prog -o ontology -t type -f force ''')
-    parser.add_option('-o', '--ontology', dest='ontology', default="yago")
+    parser.add_option('-o', '--ontology', dest='ontology', default="dbpedia")
     parser.add_option('-t', '--type', dest='type', default="generic")
-    parser.add_option('-f', '--force', dest='force', default=False)
+    parser.add_option('-f', '--force', dest='force', default=True)
     opts, args = parser.parse_args()
     train(opts)
