@@ -3,6 +3,7 @@ from gensim import utils
 from gensim.models.doc2vec import TaggedDocument
 from gensim.models import Doc2Vec
 import FileHelper
+from optparse import OptionParser
 
 # random shuffle
 from random import shuffle
@@ -13,6 +14,7 @@ import numpy
 
 # classifier
 from sklearn import svm
+from sklearn.linear_model import LogisticRegression
 
 import logging
 import sys
@@ -80,10 +82,10 @@ def createModel(type,ontology):
     log.info('Model Save')
     model.save('./{}_{}.d2v'.format(ontology,type))
 
-def train(type,ontology,force=False):
-    if force:
-        createModel(type=type,ontology=ontology)
-    model = Doc2Vec.load('./{}_{}.d2v'.format(ontology,type))
+def train(args):
+    if args.force:
+        createModel(type=args.type,ontology=args.ontology)
+    model = Doc2Vec.load('./{}_{}.d2v'.format(args.ontology,args.type))
     log.info('Sentiment')
 
     train_positive_length = FileHelper.nbLines('train_positive.txt')
@@ -120,20 +122,26 @@ def train(type,ontology,force=False):
         test_labels[i] = 0
 
     log.info('Fitting')
-    classifier = svm.SVC()
+    classifier = svm.SVC(kernel="rbf")
     #classifier = LogisticRegression()
     classifier.fit(train_arrays, train_labels)
 
-    #LogisticRegression(C=1.0, class_weight=None, dual=False, fit_intercept=True,
-              #intercept_scaling=1, penalty='l2', random_state=None, tol=0.0001)
-
-    #y_pred = classifier.predict(test_arrays)
-    #print(f1_score(y_test, y_pred, average="macro"))
-    #print(precision_score(y_test, y_pred, average="macro"))
-    #print(recall_score(y_test, y_pred, average="macro"))
-
     log.info('Evaluation....')
+    y_pred = classifier.predict(test_arrays)
+    log.info("Ontology:{} - Type : {} ".format(args.ontology, args.type))
 
-    print(classifier.score(test_arrays, test_labels))
+    print("Precision",precision_score(test_labels, y_pred, average="weighted"))
+    print("Recall",recall_score(test_labels, y_pred, average="weighted", labels=[1,0]))
+    print("F1", f1_score(test_labels, y_pred, average="weighted", labels=[1,0]))
 
-train(type='generic',ontology='dbpedia',force=False)
+    #print(classifier.score(test_arrays, test_labels))
+
+#train()
+
+if __name__ == "__main__":
+    parser = OptionParser('''%prog -o ontology -t type -f force ''')
+    parser.add_option('-o', '--ontology', dest='ontology', default="dbpedia")
+    parser.add_option('-t', '--type', dest='type', default="normal")
+    parser.add_option('-f', '--force', dest='force', default=True)
+    opts, args = parser.parse_args()
+    train(opts)
