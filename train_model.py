@@ -14,6 +14,7 @@ import numpy
 
 # classifier
 from sklearn import svm
+from sklearn.naive_bayes import  BaseNB
 from sklearn.linear_model import LogisticRegression
 
 import logging
@@ -87,7 +88,7 @@ def train(args):
                                   name="train_{}_{}".format(args.type,args.ontology))
         createModel(sources={'test_negative.txt':'TEST_NEG', 'test_positive.txt':'TEST_POS'}, name="test_{}_{}".format(args.type,args.ontology))
     else:
-        model_train = Doc2Vec.load('./train_{}_{}.d2v'.format(args.ontology, args.type))
+        model_train = Doc2Vec.load('./train_{}_{}.d2v'.format(args.type, args.ontology))
 
     log.info('Event Classification')
     train_positive_length = FileHelper.nbLines('train_positive.txt')
@@ -106,13 +107,13 @@ def train(args):
         train_labels[i] = 0
 
     log.info('Fitting the model')
-    classifier = svm.SVC(kernel="rbf")
-    #classifier = LogisticRegression()
+    #classifier = svm.SVC(kernel="rbf")
+    classifier = BaseNB()
     classifier.fit(train_arrays, train_labels)
-    test(classifier=classifier)
+    test(classifier=classifier,args=args)
 
-def test(classifier):
-    model_test = Doc2Vec.load('./test_{}_{}.d2v'.format(args.ontology, args.type))
+def test(classifier,args):
+    model_test = Doc2Vec.load('./test_{}_{}.d2v'.format(args.type, args.ontology))
     test_positive_length = FileHelper.nbLines('test_positive.txt')
     test_negative_length = FileHelper.nbLines('test_negative.txt')
 
@@ -147,6 +148,6 @@ if __name__ == "__main__":
     parser = OptionParser('''%prog -o ontology -t type -f force ''')
     parser.add_option('-o', '--ontology', dest='ontology', default="yago")
     parser.add_option('-t', '--type', dest='type', default="generic")
-    parser.add_option('-f', '--force', dest='force', default=True)
+    parser.add_option('-f', '--force', dest='force', default=False)
     opts, args = parser.parse_args()
     train(opts)
