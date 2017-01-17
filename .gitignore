@@ -1,0 +1,12 @@
+*.d2v
+imdb.d2v.syn1neg.npy
+imdb.d2v.wv.syn0.npy
+.idea/embedding.iml
+.idea/misc.xml
+.idea/modules.xml
+.idea/workspace.xml
+.idea/inspectionProfiles/Project_Default.xml
+__pycache__/FileHelper.cpython-35.pyc
+helper/__pycache__/__init__.cpython-35.pyc
+helper/__pycache__/MongoHelper.cpython-35.pyc
+helper/__pycache__/NltkHelper.cpython-35.pyc
