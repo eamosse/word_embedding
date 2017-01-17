@@ -14,10 +14,10 @@ def parse(data):
 def write(data, file):
     with open(file, "w") as f:
         texts = parse(data)
+        print(texts)
         f.write('\n'.join(texts))
+
 def generate(type,ontology):
-    #sources = {'test_negative.txt': 'TEST_NEG', 'test_positive.txt': 'TEST_POS', 'train_negative.txt': 'TRAIN_NEG',
-               #'train_positive.txt': 'TRAIN_POS'}
     data = db.find("annotated", query={"type":type, "ontology":ontology, "dataset":"event 2012", "category":{"$ne":"undefined"}})
     write(data=data,file='train_positive.txt')
 
@@ -35,4 +35,4 @@ def nbLines(file):
     num_lines = sum(1 for line in open(file))
     return num_lines
 
-generate("normal","dbpedia")
+#generate("normal","dbpedia")

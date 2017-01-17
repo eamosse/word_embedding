@@ -61,12 +61,7 @@ class TaggedLineSentence(object):
         shuffle(self.sentences)
         return self.sentences
 
-def createModel(type,ontology):
-    log.info('generating the files...')
-    FileHelper.generate(type=type, ontology=ontology)
-    log.info('source load')
-    sources = {'test_negative.txt':'TEST_NEG', 'test_positive.txt':'TEST_POS', 'train_negative.txt':'TRAIN_NEG', 'train_positive.txt':'TRAIN_POS'}
-
+def createModel(sources, name):
     log.info('TaggedDocument')
     sentences = TaggedLineSentence(sources)
 
@@ -80,51 +75,61 @@ def createModel(type,ontology):
         model.train(sentences.sentences_perm())
 
     log.info('Model Save')
-    model.save('./{}_{}.d2v'.format(ontology,type))
+    model.save('./{}.d2v'.format(name))
+    return model
 
 def train(args):
+    print(args)
     if args.force:
-        createModel(type=args.type,ontology=args.ontology)
-    model = Doc2Vec.load('./{}_{}.d2v'.format(args.ontology,args.type))
-    log.info('Sentiment')
+        log.info('generating the files...')
+        FileHelper.generate(type=args.type, ontology=args.ontology)
+        model_train = createModel(sources={'train_positive.txt':'TRAIN_POS', 'train_negative.txt':'TRAIN_NEG'},
+                                  name="train_{}_{}".format(args.type,args.ontology))
+        createModel(sources={'test_negative.txt':'TEST_NEG', 'test_positive.txt':'TEST_POS'}, name="test_{}_{}".format(args.type,args.ontology))
+    else:
+        model_train = Doc2Vec.load('./train_{}_{}.d2v'.format(args.ontology, args.type))
 
+    log.info('Event Classification')
     train_positive_length = FileHelper.nbLines('train_positive.txt')
     train_negative_length = FileHelper.nbLines('train_negative.txt')
-    test_positive_length = FileHelper.nbLines('test_positive.txt')
-    test_negative_length = FileHelper.nbLines('test_negative.txt')
-
     train_arrays = numpy.zeros((train_positive_length+train_negative_length, 100))
     train_labels = numpy.zeros(train_positive_length+train_negative_length)
 
     for i in range(train_positive_length):
         prefix_train_pos = 'TRAIN_POS_' + str(i)
-        train_arrays[i] = model.docvecs[prefix_train_pos]
+        train_arrays[i] = model_train.docvecs[prefix_train_pos]
         train_labels[i] = 1
 
     for i in range(train_positive_length, train_positive_length+train_negative_length):
         prefix_train_neg = 'TRAIN_NEG_' + str(i-train_positive_length)
-        train_arrays[i] = model.docvecs[prefix_train_neg]
+        train_arrays[i] = model_train.docvecs[prefix_train_neg]
         train_labels[i] = 0
 
-    total = test_positive_length+test_negative_length
+    log.info('Fitting the model')
+    classifier = svm.SVC(kernel="rbf")
+    #classifier = LogisticRegression()
+    classifier.fit(train_arrays, train_labels)
+    test(classifier=classifier)
+
+def test(classifier):
+    model_test = Doc2Vec.load('./test_{}_{}.d2v'.format(args.ontology, args.type))
+    test_positive_length = FileHelper.nbLines('test_positive.txt')
+    test_negative_length = FileHelper.nbLines('test_negative.txt')
+
+    total = test_positive_length + test_negative_length
 
     test_arrays = numpy.zeros((total, 100))
     test_labels = numpy.zeros(total)
 
     for i in range(test_positive_length):
         prefix_test_pos = 'TEST_POS_' + str(i)
-        test_arrays[i] = model.docvecs[prefix_test_pos]
+        test_arrays[i] = model_test.docvecs[prefix_test_pos]
         test_labels[i] = 1
 
-    for i in range(test_positive_length,total):
-        prefix_test_neg = 'TEST_NEG_' + str(i-test_positive_length)
-        test_arrays[i] = model.docvecs[prefix_test_neg]
+    for i in range(test_positive_length, total):
+        prefix_test_neg = 'TEST_NEG_' + str(i - test_positive_length)
+        test_arrays[i] = model_test.docvecs[prefix_test_neg]
         test_labels[i] = 0
-
-    log.info('Fitting')
-    classifier = svm.SVC(kernel="rbf")
-    #classifier = LogisticRegression()
-    classifier.fit(train_arrays, train_labels)
 
     log.info('Evaluation....')
     y_pred = classifier.predict(test_arrays)
@@ -140,8 +145,8 @@ def train(args):
 
 if __name__ == "__main__":
     parser = OptionParser('''%prog -o ontology -t type -f force ''')
-    parser.add_option('-o', '--ontology', dest='ontology', default="dbpedia")
-    parser.add_option('-t', '--type', dest='type', default="normal")
+    parser.add_option('-o', '--ontology', dest='ontology', default="yago")
+    parser.add_option('-t', '--type', dest='type', default="generic")
     parser.add_option('-f', '--force', dest='force', default=True)
     opts, args = parser.parse_args()
     train(opts)

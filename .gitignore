@@ -1,4 +1,5 @@
 *.d2v
+*.txt
 imdb.d2v.syn1neg.npy
 imdb.d2v.wv.syn0.npy
 .idea/embedding.iml
