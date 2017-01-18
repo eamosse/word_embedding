@@ -54,8 +54,8 @@ def loadData(positive,negative):
     return X, y
 
 def trainW2v(args):
+    print(args)
     if args.force == 1 :
-
         FileHelper.generate(args.type,args.ontology)
 
     model = createWord2VecModel("train")
