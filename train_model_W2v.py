@@ -154,7 +154,7 @@ if __name__ == "__main__":
     parser = OptionParser('''%prog -o ontology -t type -f force ''')
     parser.add_option('-o', '--ontology', dest='ontology', default="dbpedia")
     parser.add_option('-t', '--type', dest='type', default="generic")
-    parser.add_option('-f', '--force', dest='force', default=0)
+    parser.add_option('-f', '--force', dest='force', default=0, type=int)
     parser.add_option('-c', '--classifier', dest='classifier', default='poly')
     opts, args = parser.parse_args()
     trainW2v(opts)
