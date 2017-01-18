@@ -14,8 +14,8 @@ def parse(data):
 def write(data, file):
     with open(file, "w") as f:
         texts = parse(data)
-        print(texts)
-        f.write('\n'.join(texts))
+        #print(texts)
+        f.write(u'\n'.join(texts).encode('utf-8').strip())
 
 def generate(type,ontology):
     if not os.path.exists("train"):
