@@ -10,7 +10,8 @@ from sklearn import svm
 from sklearn.pipeline import Pipeline
 from collections import Counter, defaultdict
 from sklearn.metrics import classification_report
-
+from optparse import OptionParser
+import FileHelper
 class MySentences(object):
     def __init__(self, dirname):
         self.dirname = dirname
@@ -52,32 +53,49 @@ def loadData(positive,negative):
     X, y = np.array(X), np.array(y)
     return X, y
 
-def trainW2v():
+def trainW2v(args):
+    if args.force == 1 :
+        FileHelper.generate(args.type,args.ontology)
+
     model = createWord2VecModel("train")
     w2v = {w: vec for w, vec in zip(model.index2word, model.syn0)}
     x_train, y_train = loadData("train/positive.txt", "train/negative.txt")
     x_test, y_test = loadData("test/positive.txt", "test/negative.txt")
-    svm_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
-                          ("extra trees", svm.SVC(kernel="poly", degree=3))])
+    C = 1.0  # SVM regularization parameter
 
-    svm_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
-                          ("extra trees", svm.SVC(kernel="poly", degree=3))])
-    """
-    etree_w2v_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
-                                ("extra trees", MultinomialNB())])
-    etree_w2v_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
-                                ("extra trees", MultinomialNB())])
+    if args.classifier == 'poly':
+        classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
+                          ("extra trees", svm.SVC(kernel="poly", degree=3, C=C))])
 
+        classifier_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
+                          ("extra trees", svm.SVC(kernel="poly", degree=3,C=C))])
+    elif args.classifier == 'linear':
+        classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
+                                     ("extra trees", svm.SVC(kernel="linear", C=C))])
 
-    """
+        classifier_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
+                                     ("extra trees", svm.SVC(kernel="linear", C=C))])
+    elif args.classifier == 'rbf':
+        classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
+                                     ("extra trees", svm.SVC(kernel='rbf', gamma=0.7, C=C))])
+
+        classifier_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
+                                     ("extra trees", svm.SVC(kernel='rbf', gamma=0.7, C=C))])
+    else:
+        classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
+                                    ("extra trees", BernoulliNB())])
+
+        classifier_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
+                                ("extra trees", BernoulliNB())])
+
     #x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
 
-    svm_count.fit(x_train, y_train)
-    y_pred = svm_count.predict(x_test)
+    classifier_count.fit(x_train, y_train)
+    y_pred = classifier_count.predict(x_test)
     print(classification_report(y_test, y_pred))
 
-    svm_tfidf.fit(x_train, y_train)
-    y_pred = svm_tfidf.predict(x_test)
+    classifier_tfidf.fit(x_train, y_train)
+    y_pred = classifier_tfidf.predict(x_test)
     print(classification_report(y_test, y_pred))
 
     #print((cross_val_score(etree_w2v, X, y, cv=10).mean()))
@@ -130,3 +148,12 @@ class TfidfEmbeddingVectorizer(object):
 
 
 trainW2v()
+
+if __name__ == "__main__":
+    parser = OptionParser('''%prog -o ontology -t type -f force ''')
+    parser.add_option('-o', '--ontology', dest='ontology', default="dbpedia")
+    parser.add_option('-t', '--type', dest='type', default="generic")
+    parser.add_option('-f', '--force', dest='force', default=0)
+    parser.add_option('-c', '--classifier', dest='classifier', default='poly')
+    opts, args = parser.parse_args()
+    trainW2v(opts)
