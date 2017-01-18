@@ -1,43 +1,26 @@
-import numpy as np
-from sklearn.pipeline import Pipeline
-from sklearn.ensemble import ExtraTreesClassifier
+from openpyxl import load_workbook
+def sendMail(_from,_to,_msg):
+    import smtplib
+    from email.mime.text import MIMEText
 
+    msg = MIMEText(_msg)
+    msg['Subject'] = '[COO] Note du partiel'
+    server = smtplib.SMTP('smtp.gmail.com', 587)  # port 465 or 587
+    server.ehlo()
+    server.starttls()
+    server.ehlo()
+    server.login('eamosse@gmail.com', '!Edou30121983!')
+    server.sendmail(_from,_to, msg.as_string())
+    server.close()
 
-from tabulate import tabulate
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-import numpy as np
-from gensim.models.word2vec import Word2Vec
-from collections import Counter, defaultdict
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.naive_bayes import BernoulliNB, MultinomialNB
-from sklearn.pipeline import Pipeline
-from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score
-from sklearn.cross_validation import cross_val_score
-from sklearn.cross_validation import StratifiedShuffleSplit
-
-# TRAIN_SET_PATH = "20ng-no-stop.txt"
-# TRAIN_SET_PATH = "r52-all-terms.txt"
-TRAIN_SET_PATH = "r8-no-stop.txt"
-
-GLOVE_6B_50D_PATH = "glove.6B.50d.txt"
-GLOVE_840B_300D_PATH = "glove.840B.300d.txt"
-
-
-
-X, y = [], []
-with open(TRAIN_SET_PATH, "r") as infile:
-    for line in infile:
-        label, text = line.split("\t")
-        # texts are already tokenized, just split on space
-        # in a real case we would use e.g. spaCy for tokenization
-        # and maybe remove stopwords etc.
-        X.append(text.split())
-        y.append(label)
-X, y = np.array(X), np.array(y)
-print ("total examples %s" % len(y))
-
+wb = load_workbook(filename = 'workbook.xlsx')
+sheet_ranges = wb['Notes']
+max = 38
+for i in range(3,38):
+    note = float(sheet_ranges['F{}'.format(str(i))].value)
+    msg = "Bonjour {}, \n".format(sheet_ranges['B{}'.format(str(i))].value)
+    msg += "Votre note pour l'examen COO : {}/20.\n".format(note)
+    msg += "N'hésitez pas à revenir vers moi si vous avez des questions.\n"
+    msg+="\n\nCordialement, \nAmosse Edouard"
+    sendMail("eamosse@gmail.com", sheet_ranges['E{}'.format(str(i))].value,msg)
+    print("{} {}".format(sheet_ranges['E{}'.format(str(i))].value,note))

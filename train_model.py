@@ -1,9 +1,11 @@
 # gensim modules
 from gensim import utils
 from gensim.models.doc2vec import TaggedDocument
-from gensim.models import Doc2Vec
+from gensim.models import Doc2Vec,Word2Vec
 import FileHelper
 from optparse import OptionParser
+import gensim
+import numpy as np
 
 # random shuffle
 from random import shuffle
@@ -14,9 +16,11 @@ import numpy
 
 # classifier
 from sklearn import svm
-from sklearn.naive_bayes import  GaussianNB
+from sklearn.naive_bayes import  *
 from sklearn.linear_model import LogisticRegression
-
+from sklearn.pipeline import Pipeline
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 import logging
 import sys
 
@@ -62,7 +66,7 @@ class TaggedLineSentence(object):
         shuffle(self.sentences)
         return self.sentences
 
-def createModel(sources, name):
+def createDoc2VecModel(sources, name):
     log.info('TaggedDocument')
     sentences = TaggedLineSentence(sources)
 
@@ -79,19 +83,20 @@ def createModel(sources, name):
     model.save('./{}.d2v'.format(name))
     return model
 
+
 def train(args):
     if args.force == 1:
         log.info('generating the files...')
         FileHelper.generate(type=args.type, ontology=args.ontology)
-        model_train = createModel(sources={'train_positive.txt':'TRAIN_POS', 'train_negative.txt':'TRAIN_NEG'},
-                                  name="train_{}_{}".format(args.type,args.ontology))
-        createModel(sources={'test_negative.txt':'TEST_NEG', 'test_positive.txt':'TEST_POS'}, name="test_{}_{}".format(args.type,args.ontology))
+        model_train = createDoc2VecModel(sources={'train/positive.txt': 'TRAIN_POS', 'train/negative.txt': 'TRAIN_NEG'},
+                                         name="train_{}_{}".format(args.type,args.ontology))
+        createDoc2VecModel(sources={'test/negative.txt': 'TEST_NEG', 'test/positive.txt': 'TEST_POS'}, name="test_{}_{}".format(args.type, args.ontology))
     else:
         model_train = Doc2Vec.load('./train_{}_{}.d2v'.format(args.type, args.ontology))
 
     log.info('Event Classification')
-    train_positive_length = FileHelper.nbLines('train_positive.txt')
-    train_negative_length = FileHelper.nbLines('train_negative.txt')
+    train_positive_length = FileHelper.nbLines('train/positive.txt')
+    train_negative_length = FileHelper.nbLines('train/negative.txt')
     train_arrays = numpy.zeros((train_positive_length+train_negative_length, 100))
     train_labels = numpy.zeros(train_positive_length+train_negative_length)
 
@@ -106,7 +111,7 @@ def train(args):
         train_labels[i] = 0
 
     C = 1.0  # SVM regularization parameter
-    log.info('Fitting the model')
+
     if args.classifier =="svc":
         classifier = svm.SVC(kernel='linear', C=C)
     elif args.classifier == "rbf":
@@ -120,13 +125,17 @@ def train(args):
     else:
         classifier = LogisticRegression()
 
+    log.info('Fitting the model')
+    classifier = Pipeline(
+        [("tfidf_vectorizer", TfidfVectorizer(analyzer=lambda x: x)), ("multinomial nb", MultinomialNB())])
+
     classifier.fit(train_arrays, train_labels)
     test(classifier=classifier,args=args)
 
 def test(classifier,args):
     model_test = Doc2Vec.load('./test_{}_{}.d2v'.format(args.type, args.ontology))
-    test_positive_length = FileHelper.nbLines('test_positive.txt')
-    test_negative_length = FileHelper.nbLines('test_negative.txt')
+    test_positive_length = FileHelper.nbLines('test/positive.txt')
+    test_negative_length = FileHelper.nbLines('test/negative.txt')
 
     total = test_positive_length + test_negative_length
 
@@ -150,10 +159,6 @@ def test(classifier,args):
     print("Precision",precision_score(test_labels, y_pred, average="weighted"))
     print("Recall",recall_score(test_labels, y_pred, average="weighted", labels=[1,0]))
     print("F1", f1_score(test_labels, y_pred, average="weighted", labels=[1,0]))
-
-    #print(classifier.score(test_arrays, test_labels))
-
-#train()
 
 if __name__ == "__main__":
     parser = OptionParser('''%prog -o ontology -t type -f force ''')

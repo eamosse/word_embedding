@@ -1,5 +1,5 @@
 from helper import MongoHelper as db
-
+import os
 db.connect("tweets_dataset")
 
 def parse(data):
@@ -18,21 +18,26 @@ def write(data, file):
         f.write('\n'.join(texts))
 
 def generate(type,ontology):
+    if not os.path.exists("train"):
+        os.makedirs("train")
+    if not os.path.exists("test"):
+        os.makedirs("test")
+
     data = db.find("annotated", query={"type":type, "ontology":ontology, "dataset":"event 2012", "category":{"$ne":"undefined"}})
-    write(data=data,file='train_positive.txt')
+    write(data=data,file='train/positive.txt')
 
     data = db.find("annotated", query={"type":type, "ontology":ontology, "dataset":"event 2012", "category":"undefined"})
-    write(data=data, file='train_negative.txt')
+    write(data=data, file='train/negative.txt')
 
     data = db.find("annotated", query={"type":type, "ontology":ontology, "dataset":"fsd", "category":{"$ne":"undefined"}})
-    write(data=data, file='test_positive.txt')
+    write(data=data, file='test/positive.txt')
 
     data = db.find("annotated", query={"type":type, "ontology":ontology, "dataset":"fsd", "category":"undefined"})
-    write(data=data, file='test_negative.txt')
+    write(data=data, file='test/negative.txt')
 
 
 def nbLines(file):
     num_lines = sum(1 for line in open(file))
     return num_lines
 
-#generate("normal","dbpedia")
+generate("generic","dbpedia")
