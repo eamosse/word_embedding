@@ -14,7 +14,7 @@ def parse(data):
 def write(data, file):
     with open(file, "w") as f:
         texts = parse(data)
-        #print(texts)
+        print(texts)
         f.write('\n'.join(texts))
 
 def generate(type,ontology):
