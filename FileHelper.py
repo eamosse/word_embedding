@@ -40,4 +40,4 @@ def nbLines(file):
     num_lines = sum(1 for line in open(file))
     return num_lines
 
-generate("generic","dbpedia")
+#generate("generic","dbpedia")

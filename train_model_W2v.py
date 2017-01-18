@@ -147,7 +147,7 @@ class TfidfEmbeddingVectorizer(object):
                             ])
 
 
-trainW2v()
+#trainW2v()
 
 if __name__ == "__main__":
     parser = OptionParser('''%prog -o ontology -t type -f force ''')
