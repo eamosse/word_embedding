@@ -5,17 +5,17 @@ db.connect("tweets_dataset")
 def parse(data):
     texts = []
     for t in data:
-        text = t['text_snowball']
+        text = t['text']
         text = ' '.join([t for t in text.split() if len(t) > 2])
         if len(text) > 0:
             texts.append(text)
     return texts
 
 def write(data, file):
-    with open(file, "w") as f:
+    with open(file, "w", encoding='utf-8') as f:
         texts = parse(data)
         #print(texts)
-        f.write(u'\n'.join(texts).encode('utf-8').strip())
+        f.write('\n'.join(texts).strip())
 
 def generate(type,ontology):
     if not os.path.exists("train"):

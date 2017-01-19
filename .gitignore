@@ -1,7 +1,8 @@
 *.d2v
+*.w2v
+*.npy
 *.txt
-imdb.d2v.syn1neg.npy
-imdb.d2v.wv.syn0.npy
+*.xls*
 .idea/embedding.iml
 .idea/misc.xml
 .idea/modules.xml

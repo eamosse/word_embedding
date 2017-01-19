@@ -24,3 +24,11 @@ for i in range(3,38):
     msg+="\n\nCordialement, \nAmosse Edouard"
     sendMail("eamosse@gmail.com", sheet_ranges['E{}'.format(str(i))].value,msg)
     print("{} {}".format(sheet_ranges['E{}'.format(str(i))].value,note))
+
+
+def createScript(user, password):
+    create = "create user {} identified by {};".format(user,password)
+    grant = "grant dba to {};".format(user)
+    revoke = "revoke unlimited tablespace from {};".format(user)
+    alter = "alter user {}  quota unlimited on users;".format(user)
+
