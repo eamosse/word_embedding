@@ -120,7 +120,7 @@ def trainW2v(args):
     """
     x_train, y_train = loadData("train/positive.txt", "train/negative.txt")
     x_test, y_test = loadData("test/positive.txt", "test/negative.txt")
-    C = 1.0  # SVM regularization parameter
+    C = 0.5  # SVM regularization parameter
 
     if args.classifier == 'poly':
         classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
