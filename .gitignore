@@ -12,3 +12,14 @@ __pycache__/FileHelper.cpython-35.pyc
 helper/__pycache__/__init__.cpython-35.pyc
 helper/__pycache__/MongoHelper.cpython-35.pyc
 helper/__pycache__/NltkHelper.cpython-35.pyc
+.idea/inspectionProfiles/
+ListingMAASED.xlsx
+__pycache__/
+dbpedia_generic.w2v
+dbpedia_generic.w2v.syn1neg.npy
+dbpedia_generic.w2v.wv.syn0.npy
+dbpedia_normal.w2v
+glove.twitter.27B/
+helper/__pycache__/
+test/
+train/
