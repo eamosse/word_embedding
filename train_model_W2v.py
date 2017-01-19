@@ -41,7 +41,7 @@ REF:https://www.ijcai.org/Proceedings/16/Papers/401.pdf
 """
 
 def tokenize(text):
-    tokens = [porter.stem(token) for token in tknzr.tokenize(text.lower()) if token not in stop and len(token) > 2]
+    tokens = [token for token in tknzr.tokenize(text.lower()) if token not in stop and len(token) > 2]
     #_grams = ngrams(tokens, 3)
     #tokens = []
     #for g in _grams:
@@ -112,12 +112,12 @@ def trainW2v(args):
         model.save("{}_{}.w2v".format(args.ontology,args.type))
     else:
         w2v = loadModel("{}_{}.w2v".format(args.ontology,args.type))
-    """with open(GLOVE_6B_200D_PATH, "r") as lines:
+    with open(GLOVE_6B_200D_PATH, "r") as lines:
         word2vec = {line.split()[0]: np.array([float(i) for i in line.split()[1:]])
                     for line in lines}
 
     w2v = {**w2v, **word2vec, }
-    """
+
     x_train, y_train = loadData("train/positive.txt", "train/negative.txt")
     x_test, y_test = loadData("test/positive.txt", "test/negative.txt")
     C = 1.0  # SVM regularization parameter
@@ -220,7 +220,7 @@ if __name__ == "__main__":
     parser.add_option('-o', '--ontology', dest='ontology', default="dbpedia")
     parser.add_option('-t', '--type', dest='type', default="normal")
     parser.add_option('-f', '--force', dest='force', default=0, type=int)
-    parser.add_option('-c', '--classifier', dest='classifier', default='linear')
+    parser.add_option('-c', '--classifier', dest='classifier', default='ben')
     parser.add_option('-j', '--job', dest='job', type=int, default=10)
     opts, args = parser.parse_args()
     trainW2v(opts)
