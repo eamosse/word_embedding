@@ -115,7 +115,7 @@ def trainW2v(args):
         log.debug("Generatiing files....")
         FileHelper.generate(args.type,args.ontology)
         log.debug("Building the W2V model")
-        model = createWord2VecModel("train", args=args)
+        model = createWord2VecModel("train/{}/{}".format(args.ontology,args.type), args=args)
         w2v = {w: vec for w, vec in zip(model.wv.index2word, model.wv.syn0)}
         model.save("{}_{}.w2v".format(args.ontology,args.type))
     else:
