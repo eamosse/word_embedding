@@ -21,6 +21,7 @@ import nltk
 from sklearn.feature_extraction.text import CountVectorizer,TfidfVectorizer
 from nltk import ngrams
 from sklearn.model_selection import GridSearchCV
+import os
 
 
 classes = []
@@ -45,7 +46,7 @@ REF:https://www.ijcai.org/Proceedings/16/Papers/401.pdf
 """
 
 def tokenize(text):
-    tokens = [token for token in tknzr.tokenize(text.lower()) if token not in stop and len(token) > 2]
+    tokens = [porter.stem(token) for token in tknzr.tokenize(text.lower()) if token not in stop and len(token) > 2]
     #_grams = ngrams(tokens, 3)
     #tokens = []
     #for g in _grams:
@@ -115,8 +116,8 @@ def trainW2v(args):
         log.debug("Generatiing files....")
         FileHelper.generate(args.type,args.ontology)
         log.debug("Building the W2V model")
-        files = ["train/{}/{}/positive.txt".format(args.ontology,args.type),
-                 "train/{}/{}/negative.txt".format(args.ontology,args.type)]
+        files = ["./train/{}/{}/positive.txt".format(args.ontology,args.type),
+                 "./train/{}/{}/negative.txt".format(args.ontology,args.type)]
         model = createWord2VecModel(files, args=args)
         w2v = {w: vec for w, vec in zip(model.wv.index2word, model.wv.syn0)}
         model.save("{}_{}.w2v".format(args.ontology,args.type))
@@ -263,9 +264,9 @@ class TfidfEmbeddingVectorizer(object):
 
 if __name__ == "__main__":
     parser = OptionParser('''%prog -o ontology -t type -f force ''')
-    parser.add_option('-o', '--ontology', dest='ontology', default="yago")
+    parser.add_option('-o', '--ontology', dest='ontology', default="dbpedia")
     parser.add_option('-t', '--type', dest='type', default="generic")
-    parser.add_option('-f', '--force', dest='force', default=0, type=int)
+    parser.add_option('-f', '--force', dest='force', default=1, type=int)
     parser.add_option('-c', '--classifier', dest='classifier', default='nb')
     parser.add_option('-j', '--job', dest='job', type=int, default=10)
     parser.add_option('-w', '--window', dest='window', type=int, default=2)
