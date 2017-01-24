@@ -60,14 +60,11 @@ class MySentences(object):
 
     def __iter__(self):
         for fname in self.files:
-            print("Reading file ", fname)
             for line in open(fname):
-                print(line)
                 yield tokenize(line)
 
 
 def createWord2VecModel(files, args={}):
-    print(files)
     sentences = MySentences(files)  # a memory-friendly iterator
     model = gensim.models.Word2Vec(sentences, workers=args.job, size=args.size, min_count=args.min_count, window=args.window)
 
