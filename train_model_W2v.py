@@ -9,7 +9,7 @@ from sklearn.linear_model import *
 from sklearn import svm
 from sklearn.pipeline import Pipeline
 from collections import Counter, defaultdict
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, confusion_matrix
 from optparse import OptionParser
 import FileHelper
 from nltk.tokenize import TweetTokenizer
@@ -20,6 +20,7 @@ import sys
 import nltk
 from sklearn.feature_extraction.text import CountVectorizer,TfidfVectorizer
 from nltk import ngrams
+classes = []
 
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)
@@ -59,17 +60,9 @@ class MySentences(object):
                 yield tokenize(line)
 
 
-def createWord2VecModel(directory="train", job=10):
+def createWord2VecModel(directory="train", args={}):
     sentences = MySentences(directory)  # a memory-friendly iterator
-    model = gensim.models.Word2Vec(sentences, workers=job, size=200, min_count=1, window=3)
-    """with open(GLOVE_6B_200D_PATH, "r") as lines:
-        word2vec = {line.split()[0]: np.array([float(i) for i in line.split()[1:]])
-                    for line in lines}
-
-    mVec = {**w2v,**word2vec,}
-    #print(word2vec)
-    """
-
+    model = gensim.models.Word2Vec(sentences, workers=args.job, size=args.size, min_count=args.min_count, window=args.window)
 
     return model
 
@@ -86,17 +79,30 @@ def mFile(file):
     return X
 
 
-def loadData(positive,negative):
-    X, y = [], []
-    p = mFile(positive)
-    y.extend([1 for _ in p])
-    X.extend(p)
+def load(folder, X, y,label):
+    train = mFile(folder)
 
-    n = mFile(negative)
-    y.extend([0 for _ in n])
-    X.extend(n)
-    X, y = np.array(X), np.array(y)
+    if len(train) > 0 :
+        y.extend([label for _ in train])
+        X.extend(train)
     return X, y
+
+def loadData(args):
+    X_train, y_train, X_test, y_test = [], [], [], []
+    global  classes
+    if args.experiment == 1:
+        classes = ["Science", "Attacks", "Politics", "Arts", "Sports", "Accidents", "Economy"]
+    else:
+        classes = ['negative', 'positive']
+    for index, category in enumerate(classes):
+        print("loading", category)
+        load("train/{}/{}/{}.txt".format(args.ontology,args.type,category),X_train,y_train,category)
+        load("test/{}/{}/{}.txt".format(args.ontology, args.type, category), X_test, y_test, category)
+        #y_train.extend([index for _ in train])
+        #X_train.extend(train)
+
+    X_train, y_train, X_test, y_test = np.array(X_train), np.array(y_train),np.array(X_test), np.array(y_test)
+    return X_train, y_train, X_test, y_test
 
 def loadModel(name):
     model = gensim.models.Word2Vec.load(name)
@@ -107,7 +113,7 @@ def trainW2v(args):
         log.debug("Generatiing files....")
         FileHelper.generate(args.type,args.ontology)
         log.debug("Building the W2V model")
-        model = createWord2VecModel("train", job=args.job)
+        model = createWord2VecModel("train", args=args)
         w2v = {w: vec for w, vec in zip(model.wv.index2word, model.wv.syn0)}
         model.save("{}_{}.w2v".format(args.ontology,args.type))
     else:
@@ -118,9 +124,14 @@ def trainW2v(args):
 
     w2v = {**w2v, **word2vec, }
     """
-    x_train, y_train = loadData("train/positive.txt", "train/negative.txt")
-    x_test, y_test = loadData("test/positive.txt", "test/negative.txt")
-    C = 0.5  # SVM regularization parameter
+    #x_train, y_train = loadData("train/{}/{}/positive.txt".format(args.ontology,args.type), "train/{}/{}/negative.txt".format(args.ontology,args.type))
+
+    #x_test, y_test = loadData("test/{}/{}/positive.txt".format(args.ontology,args.type), "test/{}/{}/negative.txt".format(args.ontology,args.type))
+
+    #x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+
+    x_train, y_train, x_test, y_test = loadData(args)
+    C = 2.0  # SVM regularization parameter
 
     if args.classifier == 'poly':
         classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
@@ -156,12 +167,14 @@ def trainW2v(args):
     log.debug("BUilding the classifier {} with word count".format(args.classifier))
     classifier_count.fit(x_train, y_train)
     y_pred = classifier_count.predict(x_test)
-    log.info(classification_report(y_test, y_pred))
+    print(classification_report(y_test, y_pred))
+    print(confusion_matrix(y_test,y_pred, labels=classes))
 
     log.debug("BUilding the classifier {} with tfidf".format(args.classifier))
     classifier_tfidf.fit(x_train, y_train)
     y_pred = classifier_tfidf.predict(x_test)
-    log.info(classification_report(y_test, y_pred))
+    print(classification_report(y_test, y_pred))
+    print(confusion_matrix(y_test, y_pred, labels=classes))
 
     #print((cross_val_score(etree_w2v, X, y, cv=10).mean()))
 
@@ -212,15 +225,18 @@ class TfidfEmbeddingVectorizer(object):
                             for words in X
                             ])
 
-
 #trainW2v()
 
 if __name__ == "__main__":
     parser = OptionParser('''%prog -o ontology -t type -f force ''')
-    parser.add_option('-o', '--ontology', dest='ontology', default="dbpedia")
-    parser.add_option('-t', '--type', dest='type', default="normal")
+    parser.add_option('-o', '--ontology', dest='ontology', default="yago")
+    parser.add_option('-t', '--type', dest='type', default="specific")
     parser.add_option('-f', '--force', dest='force', default=0, type=int)
-    parser.add_option('-c', '--classifier', dest='classifier', default='poly')
+    parser.add_option('-c', '--classifier', dest='classifier', default='linear')
     parser.add_option('-j', '--job', dest='job', type=int, default=10)
+    parser.add_option('-w', '--window', dest='window', type=int, default=2)
+    parser.add_option('-s', '--size', dest='size', type=int, default=300)
+    parser.add_option('-m', '--min', dest='min_count', type=int, default=5)
+    parser.add_option('-e', '--experiment', dest='experiment', type=int, default=1)
     opts, args = parser.parse_args()
     trainW2v(opts)

@@ -11,33 +11,83 @@ def parse(data):
             texts.append(text)
     return texts
 
-def write(data, file):
-    with open(file, "w", encoding='utf-8') as f:
+def write(data, folder, file):
+    create(folder)
+    with open("{}/{}".format(folder,file), "w", encoding='utf-8') as f:
         texts = parse(data)
-        #print(texts)
         f.write('\n'.join(texts).strip())
 
+def create(folder, destination="./"):
+    if not os.path.exists("{}/{}".format(destination,folder)):
+        os.makedirs("{}/{}".format(destination,folder))
+
 def generate(type,ontology):
-    if not os.path.exists("train"):
-        os.makedirs("train")
-    if not os.path.exists("test"):
-        os.makedirs("test")
 
     data = db.find("annotated", query={"type":type, "ontology":ontology, "dataset":"event 2012", "category":{"$ne":"undefined"}})
-    write(data=data,file='train/positive.txt')
+    write(data=data,folder="train/{}/{}".format(ontology,type), file='positive.txt')
 
     data = db.find("annotated", query={"type":type, "ontology":ontology, "dataset":"event 2012", "category":"undefined"})
-    write(data=data, file='train/negative.txt')
+    write(data=data, folder="train/{}/{}".format(ontology, type), file='negative.txt')
 
     data = db.find("annotated", query={"type":type, "ontology":ontology, "dataset":"fsd", "category":{"$ne":"undefined"}})
-    write(data=data, file='test/positive.txt')
+    write(data=data, folder="test/{}/{}".format(ontology, type), file='positive.txt')
 
     data = db.find("annotated", query={"type":type, "ontology":ontology, "dataset":"fsd", "category":"undefined"})
-    write(data=data, file='test/negative.txt')
+    write(data=data, folder="test/{}/{}".format(ontology, type), file='negative.txt')
 
 
 def nbLines(file):
     num_lines = sum(1 for line in open(file))
     return num_lines
 
-#generate("generic","dbpedia")
+def buildModelForTrain(config):
+    config['dataset'] = "fsd"
+    sentences = db.find("annotated",query=config)
+    write(sentences, folder="test/{}/{}".format(config['ontology'], config['type']),
+          file="{}.txt".format(config['category']))
+
+    config['dataset'] = "event 2012"
+    sentences = db.find("annotated", query=config)
+    write(sentences, folder="train/{}/{}".format(config['ontology'], config['type']),
+          file="{}.txt".format(config['category']))
+
+    #print(sentences)
+
+def generateFolders():
+    create("train")
+    create("test")
+    create("dbpedia", destination="train")
+    create("dbpedia", destination="test")
+    create("yago", destination="train")
+    create("yago", destination="test")
+    create("generic", destination="train/dbpedia")
+    create("specific", destination="train/dbpedia")
+    create("generic", destination="train/yago")
+    create("specific", destination="train/yago")
+    create("generic", destination="test/dbpedia")
+    create("specific", destination="test/dbpedia")
+    create("generic", destination="test/yago")
+    create("specific", destination="test/yago")
+    create("normal", destination="train")
+    create("normal", destination="test")
+
+def main():
+    params = [
+        {'ontology': 'dbpedia', 'type': 'generic', 'name': 'dbpedia_generic'},
+        {'ontology': 'dbpedia', 'type': 'specific', 'name': 'dbpedia_specific'},
+        {'ontology': 'yago', 'type': 'generic', 'name': 'yago_generic'},
+        {'ontology': 'yago', 'type': 'specific', 'name': 'yago_specific'},
+        {'ontology': 'dbpedia', 'type': 'normal', 'name': 'dbpedia_normal'},
+    ]
+    categories = ["Science","Attacks", "Politics","Miscellaneous","Arts","Sports","Accidents","Economy"]
+
+    for cat in categories:
+        for config in params:
+            config['category'] = cat
+            if 'name' in config:
+                del config['name']
+
+            buildModelForTrain(config)
+            generate(config['type'], config['ontology'])
+if __name__ == '__main__':
+    main()

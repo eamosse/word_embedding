@@ -71,7 +71,7 @@ def createDoc2VecModel(sources, name):
     sentences = TaggedLineSentence(sources)
 
     log.info('D2V')
-    model = Doc2Vec(min_count=1, window=10, size=100, sample=1e-4, negative=5, workers=7)
+    model = Doc2Vec(min_count=1, window=1, size=300, sample=1e-4, negative=0, workers=10)
     model.build_vocab(sentences.to_array())
 
     log.info('Epoch')
@@ -97,7 +97,7 @@ def train(args):
     log.info('Event Classification')
     train_positive_length = FileHelper.nbLines('train/positive.txt')
     train_negative_length = FileHelper.nbLines('train/negative.txt')
-    train_arrays = numpy.zeros((train_positive_length+train_negative_length, 100))
+    train_arrays = numpy.zeros((train_positive_length+train_negative_length, 300))
     train_labels = numpy.zeros(train_positive_length+train_negative_length)
 
     for i in range(train_positive_length):
@@ -120,7 +120,7 @@ def train(args):
         classifier = svm.SVC(kernel='poly', degree=3, C=C)
     elif args.classifier == "linear":
         classifier = svm.LinearSVC(C=C)
-    elif args.args == "nb" :
+    elif args.classifier == "nb" :
         classifier = GaussianNB()
     else:
         classifier = LogisticRegression()
@@ -139,7 +139,7 @@ def test(classifier,args):
 
     total = test_positive_length + test_negative_length
 
-    test_arrays = numpy.zeros((total, 100))
+    test_arrays = numpy.zeros((total, 300))
     test_labels = numpy.zeros(total)
 
     for i in range(test_positive_length):
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     parser = OptionParser('''%prog -o ontology -t type -f force ''')
     parser.add_option('-o', '--ontology', dest='ontology', default="dbpedia")
     parser.add_option('-t', '--type', dest='type', default="generic")
-    parser.add_option('-f', '--force', dest='force', default=0)
-    parser.add_option('-c', '--classifier', dest='classifier', default='poly')
+    parser.add_option('-f', '--force', dest='force', default=1)
+    parser.add_option('-c', '--classifier', dest='classifier', default='nb')
     opts, args = parser.parse_args()
     train(opts)

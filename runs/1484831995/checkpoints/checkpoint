@@ -1,0 +1,6 @@
+model_checkpoint_path: "/Users/aedouard/Dropbox/_dev/these/event_classification/embedding/runs/1484831995/checkpoints/model-141900"
+all_model_checkpoint_paths: "/Users/aedouard/Dropbox/_dev/these/event_classification/embedding/runs/1484831995/checkpoints/model-141500"
+all_model_checkpoint_paths: "/Users/aedouard/Dropbox/_dev/these/event_classification/embedding/runs/1484831995/checkpoints/model-141600"
+all_model_checkpoint_paths: "/Users/aedouard/Dropbox/_dev/these/event_classification/embedding/runs/1484831995/checkpoints/model-141700"
+all_model_checkpoint_paths: "/Users/aedouard/Dropbox/_dev/these/event_classification/embedding/runs/1484831995/checkpoints/model-141800"
+all_model_checkpoint_paths: "/Users/aedouard/Dropbox/_dev/these/event_classification/embedding/runs/1484831995/checkpoints/model-141900"
