@@ -54,17 +54,17 @@ def tokenize(text):
 
 
 class MySentences(object):
-    def __init__(self, dirname):
-        self.dirname = dirname
+    def __init__(self, files):
+        self.files = files
 
     def __iter__(self):
-        for fname in os.listdir(self.dirname):
-            for line in open(os.path.join(self.dirname, fname)):
+        for fname in self.files:
+            for line in open(fname):
                 yield tokenize(line)
 
 
-def createWord2VecModel(directory="train", args={}):
-    sentences = MySentences(directory)  # a memory-friendly iterator
+def createWord2VecModel(files, args={}):
+    sentences = MySentences(files)  # a memory-friendly iterator
     model = gensim.models.Word2Vec(sentences, workers=args.job, size=args.size, min_count=args.min_count, window=args.window)
 
     return model
@@ -115,7 +115,9 @@ def trainW2v(args):
         log.debug("Generatiing files....")
         FileHelper.generate(args.type,args.ontology)
         log.debug("Building the W2V model")
-        model = createWord2VecModel("train/{}/{}".format(args.ontology,args.type), args=args)
+        files = ["train/{}/{}/positive.txt".format(args.ontology,args.type),
+                 "train/{}/{}/negative.txt".format(args.ontology,args.type)]
+        model = createWord2VecModel(files, args=args)
         w2v = {w: vec for w, vec in zip(model.wv.index2word, model.wv.syn0)}
         model.save("{}_{}.w2v".format(args.ontology,args.type))
     else:
