@@ -6,33 +6,22 @@ from optparse import OptionParser
 from helper import FileHelper, Word2VecHelper
 import helper
 from helper.VectorHelper import *
-classes = []
-
 
 log = helper.enableLog()
 
 
 def trainW2v(args):
-    global classes
-    if args.experiment == 1:
-        classes = ["Accidents", "Arts", "Attacks", "Economy", "Miscellaneous", "Politics", "Science"]
-    else:
-        classes = ['negative', 'positive']
-    if args.force == 1 :
-        log.debug("Generatiing files....")
-        FileHelper.generateDataFile()
-        log.debug("Building the W2V model")
-        files = ["./train/{}/{}/positive.txt".format(args.ontology, args.type),
-                "./train/{}/{}/negative.txt".format(args.ontology, args.type)]
-        model = Word2VecHelper.createModel(name="{}_{}".format(args.ontology, args.type), files=files)
-    else:
-        model = Word2VecHelper.loadModel("{}_{}".format(args.ontology,args.type))
+    all = ["Accidents", "Arts", "Attacks", "Economy", "Miscellaneous", "Politics", "Science", "undefined"]
+    binaries = ['negative', 'positive']
 
+    model = Word2VecHelper.loadModel("{}_{}".format(args.ontology,args.type))
     w2v = {w: vec for w, vec in zip(model.wv.index2word, model.wv.syn0)}
 
 
-    train_instances, train_labels, train_texts = Word2VecHelper.loadData(classes,args, 'train')
-    test_instances, test_labels, test_texts = Word2VecHelper.loadData(classes,args, 'test')
+    train_instances, train_labels, train_texts = Word2VecHelper.loadData(binaries,args, 'train')
+    test_instances, test_labels, test_texts = Word2VecHelper.loadData(binaries,args, 'test')
+
+
 
     C = 2.0  # SVM regularization parameter
 
@@ -67,25 +56,31 @@ def trainW2v(args):
         [("tfidf_vectorizer", TfidfVectorizer(analyzer=lambda x: x)), ("multinomial nb", MultinomialNB())])
 
     #x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
-    log.debug("BUilding the classifier {} with word count".format(args.classifier))
+    log.debug("Train the binary model".format(args.classifier))
     classifier_count.fit(train_texts, train_labels)
     y_pred = classifier_count.predict(test_texts)
 
     print(classification_report(test_labels, y_pred))
-    print(confusion_matrix(test_labels,y_pred, labels=classes))
+    print(confusion_matrix(test_labels,y_pred, labels=binaries))
 
 
+    #build the training and test file for task 2
+    ids = []
+    for i, label in enumerate(y_pred):
+        if label == 'positive':
+            ids.append(test_instances[i])
+    eval_file = FileHelper.generateFileForIds(ids=ids, ontology=args.ontology, type=args.type)
 
-    """
-    log.debug("BUilding the classifier {} with tfidf".format(args.classifier))
-    classifier_tfidf.fit(x_train, y_train)
-    y_pred = classifier_tfidf.predict(x_test)
-    print(y_pred)
-    print(classification_report(y_test, y_pred))
-    print(confusion_matrix(y_test, y_pred, labels=classes))
-    """
+    train_instances_multi, train_labels_multi, train_texts_multi = Word2VecHelper.loadData(all, args, 'train')
+    _, test_labels_multi, test_texts_multi = Word2VecHelper.dataFromFile(eval_file)
 
-    #print((cross_val_score(etree_w2v, X, y, cv=10).mean()))
+    #Train the multi class model
+    classifier_count.fit(train_texts_multi, train_labels_multi)
+    y_pred = classifier_count.predict(test_texts_multi)
+    print(classification_report(test_labels_multi, y_pred))
+    print(confusion_matrix(test_labels_multi, y_pred, labels=all))
+
+
 
 
 #trainW2v()
