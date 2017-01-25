@@ -11,7 +11,6 @@ from sklearn.pipeline import Pipeline
 from collections import Counter, defaultdict
 from sklearn.metrics import classification_report, confusion_matrix
 from optparse import OptionParser
-import FileHelper
 from nltk.tokenize import TweetTokenizer
 import logging
 from nltk.corpus import stopwords
@@ -22,107 +21,24 @@ from sklearn.feature_extraction.text import CountVectorizer,TfidfVectorizer
 from nltk import ngrams
 from sklearn.model_selection import GridSearchCV
 import os
+from helper import Word2VecHelper
 
 
 classes = []
 
-log = logging.getLogger()
-log.setLevel(logging.DEBUG)
 
-ch = logging.StreamHandler(sys.stdout)
-ch.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-ch.setFormatter(formatter)
-log.addHandler(ch)
-
-tknzr = TweetTokenizer()
-stop = stopwords.words('english') + list(string.punctuation)
-porter = nltk.PorterStemmer()
-GLOVE_6B_200D_PATH = "glove.twitter.27B/glove.twitter.27B.200d.txt"
-"""
-TODO:Try word context by taking n tokens before and after each token in the sentence
-REF:https://www.ijcai.org/Proceedings/16/Papers/401.pdf
-
-"""
-
-def tokenize(text):
-    tokens = [porter.stem(token) for token in tknzr.tokenize(text.lower()) if token not in stop and len(token) > 2]
-    #_grams = ngrams(tokens, 3)
-    #tokens = []
-    #for g in _grams:
-        #tokens.append(' '.join(g))
-    return tokens
-
-
-class MySentences(object):
-    def __init__(self, files):
-        self.files = files
-
-    def __iter__(self):
-        for fname in self.files:
-            for line in open(fname):
-                yield tokenize(line)
-
-
-def createWord2VecModel(files, args={}):
-    sentences = MySentences(files)  # a memory-friendly iterator
-    model = gensim.models.Word2Vec(sentences, workers=args.job, size=args.size, min_count=args.min_count, window=args.window)
-
-    return model
-
-
-def mFile(file):
-    X = []
-    with open(file, "r") as infile:
-        for line in infile:
-            # label, text = line.split("\t")
-            # texts are already tokenized, just split on space
-            # in a real case we would use e.g. spaCy for tokenization
-            # and maybe remove stopwords etc.
-            X.append(tokenize(line))
-    return X
-
-
-def load(folder, X, y,label):
-    train = mFile(folder)
-
-    if len(train) > 0 :
-        y.extend([label for _ in train])
-        X.extend(train)
-    return X, y
-
-def loadData(args):
-    X_train, y_train, X_test, y_test = [], [], [], []
-    global  classes
-    if args.experiment == 1:
-        classes = ["Science", "Attacks", "Politics", "Arts", "Sports", "Accidents", "Economy"]
-    else:
-        classes = ['negative', 'positive']
-    for index, category in enumerate(classes):
-        load("train/{}/{}/{}.txt".format(args.ontology,args.type,category),X_train,y_train,category)
-        load("test/{}/{}/{}.txt".format(args.ontology, args.type, category), X_test, y_test, category)
-        #y_train.extend([index for _ in train])
-        #X_train.extend(train)
-
-    X_train, y_train, X_test, y_test = np.array(X_train), np.array(y_train),np.array(X_test), np.array(y_test)
-    return X_train, y_train, X_test, y_test
-
-def loadModel(name):
-    model = gensim.models.Word2Vec.load(name)
-    return {w: vec for w, vec in zip(model.wv.index2word, model.wv.syn0)}
+log = enableLog()
 
 def trainW2v(args):
     if args.force == 1 :
-        log.debug("Generatiing files....")
-        FileHelper.generate(args.type,args.ontology)
         log.debug("Building the W2V model")
         files = ["./train/{}/{}/positive.txt".format(args.ontology,args.type),
                  "./train/{}/{}/negative.txt".format(args.ontology,args.type)]
-        model = createWord2VecModel(files, args=args)
+        model = Word2VecHelper.createModel(name="{}_{}".format(args.ontology, args.type), files, args=args)
         w2v = {w: vec for w, vec in zip(model.wv.index2word, model.wv.syn0)}
         model.save("{}_{}.w2v".format(args.ontology,args.type))
     else:
-        w2v = loadModel("{}_{}.w2v".format(args.ontology,args.type))
+        w2v = Word2VecHelper.loadModel("{}_{}".format(args.ontology,args.type))
     """with open(GLOVE_6B_200D_PATH, "r") as lines:
         word2vec = {line.split()[0]: np.array([float(i) for i in line.split()[1:]])
                     for line in lines}
