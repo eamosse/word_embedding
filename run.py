@@ -4,6 +4,14 @@ import helper
 
 helper.enableLog()
 
+def _run(args):
+    if (args.force == 1):
+        FileHelper.generateDataFile()
+    if (args.embedding == 1):
+        files = ["./train/{}/{}/positive.txt".format(args.ontology, args.type),
+                 "./train/{}/{}/negative.txt".format(args.ontology, args.type)]
+        Word2VecHelper.createModel(files=files, name="{}_{}".format(args.ontology, args.type))
+
 if __name__ == '__main__':
 
     parser = OptionParser('''%prog -o ontology -t type -f force ''')
@@ -17,9 +25,4 @@ if __name__ == '__main__':
     parser.add_option('-w', '--embedding', dest='experiment', type=int, default=0)
     opts, args = parser.parse_args()
 
-    if(opts.force == 1) :
-        FileHelper.generateDataFile()
-    if (opts.embedding == 1):
-        files = ["./train/{}/{}/positive.txt".format(args.ontology, args.type),
-                 "./train/{}/{}/negative.txt".format(args.ontology, args.type)]
-        Word2VecHelper.createModel(files=files, name="{}_{}".format(args.ontology,args.type))
+    _run(opts)
