@@ -14,9 +14,14 @@ def trainW2v(args):
     all = ["Accidents", "Arts", "Attacks", "Economy", "Miscellaneous", "Politics", "Science", "undefined"]
     binaries = ['negative', 'positive']
 
-    model = Word2VecHelper.loadModel("{}_{}".format(args.ontology,args.type))
-    w2v = {w: vec for w, vec in zip(model.wv.index2word, model.wv.syn0)}
+    if args.force == 1:
+        files = ["./train/{}/{}/positive.txt".format(args.ontology, args.type),
+                 "./train/{}/{}/negative.txt".format(args.ontology, args.type)]
+        model = Word2VecHelper.createModel(files,name="{}_{}".format(args.ontology, args.type), merge=args.merge)
+    else:
+        model = Word2VecHelper.loadModel("{}_{}".format(args.ontology,args.type),merge=args.merge)
 
+    w2v = {w: vec for w, vec in zip(model.wv.index2word, model.wv.syn0)}
 
     train_instances, train_labels, train_texts = Word2VecHelper.loadData(binaries,args, 'train')
     test_instances, test_labels, test_texts = Word2VecHelper.loadData(binaries,args, 'test')
@@ -85,7 +90,6 @@ def trainW2v(args):
 
 
 
-
 #trainW2v()
 
 if __name__ == "__main__":
@@ -97,7 +101,7 @@ if __name__ == "__main__":
     parser.add_option('-j', '--job', dest='job', type=int, default=10)
     parser.add_option('-w', '--window', dest='window', type=int, default=2)
     parser.add_option('-s', '--size', dest='size', type=int, default=300)
-    parser.add_option('-m', '--min', dest='min_count', type=int, default=5)
+    parser.add_option('-m', '--merge', dest='merge', type=bool, default=False)
     parser.add_option('-e', '--experiment', dest='experiment', type=int, default=1)
     opts, args = parser.parse_args()
 
