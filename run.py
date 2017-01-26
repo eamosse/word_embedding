@@ -1,5 +1,8 @@
 from helper import FileHelper, Word2VecHelper
 from optparse import OptionParser
+import helper
+
+helper.enableLog()
 
 if __name__ == '__main__':
 
