@@ -21,7 +21,7 @@ def trainW2v(args):
     train_instances, train_labels, train_texts = Word2VecHelper.loadData(binaries,args, 'train')
     test_instances, test_labels, test_texts = Word2VecHelper.loadData(binaries,args, 'test')
 
-    cl = ["poly", "rbf", "nb", "linear"]
+    cl = ["linear"]
 
     for cc in cl:
         args.classifier = cc
