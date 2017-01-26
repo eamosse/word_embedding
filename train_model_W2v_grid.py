@@ -27,7 +27,7 @@ def trainW2v(args):
     train_instances, train_labels, train_texts = Word2VecHelper.loadData(all, args, 'train')
     test_instances, test_labels, test_texts = Word2VecHelper.loadData(all, args, 'test')
 
-    C = 10.0  # SVM regularization parameter
+    C = 1.0  # SVM regularization parameter
 
     if args.classifier == 'poly':
         classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
@@ -57,12 +57,12 @@ def trainW2v(args):
         classifier_count = Pipeline(
         [
          ("tf_idf", TfidfEmbeddingVectorizer(w2v)),
-         ('clf',svm.SVC(kernel='poly', gamma=10))]
+         ('clf',svm.SVC(kernel='poly', C=C))]
         )
 
     parameters = {
-                 'clf__gamma': (0.1, 0.3, 0.5),
-                 'clf__degree': (1,3,5)}
+                 'clf__gamma': (0.5, 0.7, 1,3),
+                 'clf__degree': (1,5,10,15)}
 
 
     # x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
