@@ -35,11 +35,13 @@ def trainW2v(args):
     train_instances, train_labels, train_texts = Word2VecHelper.loadData(classes,args, 'train')
     test_instances, test_labels, test_texts = Word2VecHelper.loadData(classes,args, 'test')
 
-    C = 2.0  # SVM regularization parameter
+    C = 10.0  # SVM regularization parameter
+    gamma = 10
+    degree = 6
 
     if args.classifier == 'poly':
         classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
-                          ("extra trees", svm.SVC(kernel="poly", degree=3, C=C))])
+                          ("extra trees", svm.SVC(kernel="poly", degree=degree, C=C, gamma=gamma))])
 
         classifier_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
                           ("extra trees", svm.SVC(kernel="poly", degree=3,C=C))])
@@ -51,10 +53,10 @@ def trainW2v(args):
                                      ("extra trees", svm.SVC(kernel="linear", C=C))])
     elif args.classifier == 'rbf':
         classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
-                                     ("extra trees", svm.SVC(kernel='rbf', gamma=0.7, C=C))])
+                                     ("extra trees", svm.SVC(kernel='rbf', gamma=10, C=C))])
 
         classifier_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
-                                     ("extra trees", svm.SVC(kernel='rbf', gamma=0.7, C=C))])
+                                     ("extra trees", svm.SVC(kernel='rbf', gamma=10, C=C))])
     elif args.classifier == 'ben':
         classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
                                     ("extra trees", BernoulliNB())])
@@ -96,7 +98,7 @@ if __name__ == "__main__":
     parser.add_option('-o', '--ontology', dest='ontology', default="yago")
     parser.add_option('-t', '--type', dest='type', default="specific")
     parser.add_option('-f', '--force', dest='force', default=0, type=int)
-    parser.add_option('-c', '--classifier', dest='classifier', default='ben')
+    parser.add_option('-c', '--classifier', dest='classifier', default='poly')
     parser.add_option('-j', '--job', dest='job', type=int, default=10)
     parser.add_option('-w', '--window', dest='window', type=int, default=2)
     parser.add_option('-s', '--size', dest='size', type=int, default=300)
