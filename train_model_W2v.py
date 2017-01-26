@@ -18,77 +18,77 @@ def trainW2v(args):
         classes = ["Accidents", "Arts", "Attacks", "Economy", "Miscellaneous", "Politics", "Science"]
     else:
         classes = ['negative', 'positive']
-    if args.force == 1 :
-        log.debug("Generatiing files....")
-        #FileHelper.generateDataFile()
-        log.debug("Building the W2V model")
+
+    if args.force == 1:
         files = ["./train/{}/{}/positive.txt".format(args.ontology, args.type),
-                "./train/{}/{}/negative.txt".format(args.ontology, args.type)]
-        model = Word2VecHelper.createModel(name="{}_{}".format(args.ontology, args.type), files=files)
+                 "./train/{}/{}/negative.txt".format(args.ontology, args.type)]
+        model = Word2VecHelper.createModel(files, name="{}_{}".format(args.ontology, args.type), merge=args.merge)
     else:
-        #model = Word2VecHelper.loadModel("GoogleNews-vectors-negative300")
-        model = Word2VecHelper.loadModel("{}_{}".format(args.ontology,args.type))
+        model = Word2VecHelper.loadModel("{}_{}".format(args.ontology, args.type), merge=args.merge)
 
     w2v = {w: vec for w, vec in zip(model.wv.index2word, model.wv.syn0)}
-
 
     train_instances, train_labels, train_texts = Word2VecHelper.loadData(classes,args, 'train')
     test_instances, test_labels, test_texts = Word2VecHelper.loadData(classes,args, 'test')
 
-    C = 10.0  # SVM regularization parameter
+    C = 2.0  # SVM regularization parameter
     gamma = 10
     degree = 6
 
-    if args.classifier == 'poly':
-        classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
-                          ("extra trees", svm.SVC(kernel="poly", degree=degree, C=C, gamma=gamma))])
+    for cl in ['ben', 'linear']:
+        args.classifier = cl
+        print("RUNNING ", cl)
 
-        classifier_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
-                          ("extra trees", svm.SVC(kernel="poly", degree=3,C=C))])
-    elif args.classifier == 'linear':
-        classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
-                                     ("extra trees", svm.SVC(kernel="linear", C=C))])
+        if args.classifier == 'poly':
+            classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
+                              ("extra trees", svm.SVC(kernel="poly", degree=degree, C=C, gamma=gamma))])
 
-        classifier_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
-                                     ("extra trees", svm.SVC(kernel="linear", C=C))])
-    elif args.classifier == 'rbf':
-        classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
-                                     ("extra trees", svm.SVC(kernel='rbf', gamma=10, C=C))])
+            classifier_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
+                              ("extra trees", svm.SVC(kernel="poly", degree=3,C=C))])
+        elif args.classifier == 'linear':
+            classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
+                                         ("extra trees", svm.SVC(kernel="linear", C=C))])
 
-        classifier_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
-                                     ("extra trees", svm.SVC(kernel='rbf', gamma=10, C=C))])
-    elif args.classifier == 'ben':
-        classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
+            classifier_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
+                                         ("extra trees", svm.SVC(kernel="linear", C=C))])
+        elif args.classifier == 'rbf':
+            classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
+                                         ("extra trees", svm.SVC(kernel='rbf', gamma=10, C=C))])
+
+            classifier_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
+                                         ("extra trees", svm.SVC(kernel='rbf', gamma=10, C=C))])
+        elif args.classifier == 'ben':
+            classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
+                                        ("extra trees", BernoulliNB())])
+
+            classifier_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
                                     ("extra trees", BernoulliNB())])
+        else:
+            classifier_count = Pipeline(
+            [("count_vectorizer", CountVectorizer(analyzer=lambda x: x)), ("multinomial nb", MultinomialNB())])
+            classifier_tfidf = Pipeline(
+            [("tfidf_vectorizer", TfidfVectorizer(analyzer=lambda x: x)), ("multinomial nb", MultinomialNB())])
 
-        classifier_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
-                                ("extra trees", BernoulliNB())])
-    else:
-        classifier_count = Pipeline(
-        [("count_vectorizer", CountVectorizer(analyzer=lambda x: x)), ("multinomial nb", MultinomialNB())])
-        classifier_tfidf = Pipeline(
-        [("tfidf_vectorizer", TfidfVectorizer(analyzer=lambda x: x)), ("multinomial nb", MultinomialNB())])
+        #x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
+        log.debug("BUilding the classifier {} with word count".format(args.classifier))
+        classifier_count.fit(train_texts, train_labels)
+        y_pred = classifier_count.predict(test_texts)
 
-    #x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
-    log.debug("BUilding the classifier {} with word count".format(args.classifier))
-    classifier_count.fit(train_texts, train_labels)
-    y_pred = classifier_count.predict(test_texts)
-
-    print(classification_report(test_labels, y_pred))
-    print(confusion_matrix(test_labels,y_pred, labels=classes))
+        print(classification_report(test_labels, y_pred))
+        print(confusion_matrix(test_labels,y_pred, labels=classes))
 
 
 
-    """
-    log.debug("BUilding the classifier {} with tfidf".format(args.classifier))
-    classifier_tfidf.fit(x_train, y_train)
-    y_pred = classifier_tfidf.predict(x_test)
-    print(y_pred)
-    print(classification_report(y_test, y_pred))
-    print(confusion_matrix(y_test, y_pred, labels=classes))
-    """
+        """
+        log.debug("BUilding the classifier {} with tfidf".format(args.classifier))
+        classifier_tfidf.fit(x_train, y_train)
+        y_pred = classifier_tfidf.predict(x_test)
+        print(y_pred)
+        print(classification_report(y_test, y_pred))
+        print(confusion_matrix(y_test, y_pred, labels=classes))
+        """
 
-    #print((cross_val_score(etree_w2v, X, y, cv=10).mean()))
+        #print((cross_val_score(etree_w2v, X, y, cv=10).mean()))
 
 
 #trainW2v()
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     parser.add_option('-j', '--job', dest='job', type=int, default=10)
     parser.add_option('-w', '--window', dest='window', type=int, default=2)
     parser.add_option('-s', '--size', dest='size', type=int, default=300)
-    parser.add_option('-m', '--min', dest='min_count', type=int, default=5)
+    parser.add_option('-m', '--merge', dest='merge', type=int, default=0)
     parser.add_option('-e', '--experiment', dest='experiment', type=int, default=1)
     opts, args = parser.parse_args()
 
