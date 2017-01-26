@@ -14,7 +14,7 @@ if __name__ == '__main__':
     parser.add_option('-w', '--embedding', dest='experiment', type=int, default=0)
     opts, args = parser.parse_args()
 
-    if(opts.f == 1) :
+    if(opts.force == 1) :
         FileHelper.generateDataFile()
     if (opts.embedding == 1):
         files = ["./train/{}/{}/positive.txt".format(args.ontology, args.type),
