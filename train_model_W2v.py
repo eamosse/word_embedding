@@ -20,7 +20,7 @@ def trainW2v(args):
         classes = ['negative', 'positive']
     if args.force == 1 :
         log.debug("Generatiing files....")
-        FileHelper.generateDataFile()
+        #FileHelper.generateDataFile()
         log.debug("Building the W2V model")
         files = ["./train/{}/{}/positive.txt".format(args.ontology, args.type),
                 "./train/{}/{}/negative.txt".format(args.ontology, args.type)]
