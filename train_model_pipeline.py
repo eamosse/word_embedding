@@ -101,7 +101,7 @@ if __name__ == "__main__":
     parser.add_option('-j', '--job', dest='job', type=int, default=10)
     parser.add_option('-w', '--window', dest='window', type=int, default=2)
     parser.add_option('-s', '--size', dest='size', type=int, default=300)
-    parser.add_option('-m', '--merge', dest='merge', type=bool, default=False)
+    parser.add_option('-m', '--merge', dest='merge', type=int, default=0)
     parser.add_option('-e', '--experiment', dest='experiment', type=int, default=1)
     opts, args = parser.parse_args()
 
