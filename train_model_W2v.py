@@ -26,6 +26,7 @@ def trainW2v(args):
                 "./train/{}/{}/negative.txt".format(args.ontology, args.type)]
         model = Word2VecHelper.createModel(name="{}_{}".format(args.ontology, args.type), files=files)
     else:
+        #model = Word2VecHelper.loadModel("GoogleNews-vectors-negative300")
         model = Word2VecHelper.loadModel("{}_{}".format(args.ontology,args.type))
 
     w2v = {w: vec for w, vec in zip(model.wv.index2word, model.wv.syn0)}
@@ -94,7 +95,7 @@ if __name__ == "__main__":
     parser = OptionParser('''%prog -o ontology -t type -f force ''')
     parser.add_option('-o', '--ontology', dest='ontology', default="yago")
     parser.add_option('-t', '--type', dest='type', default="specific")
-    parser.add_option('-f', '--force', dest='force', default=1, type=int)
+    parser.add_option('-f', '--force', dest='force', default=0, type=int)
     parser.add_option('-c', '--classifier', dest='classifier', default='ben')
     parser.add_option('-j', '--job', dest='job', type=int, default=10)
     parser.add_option('-w', '--window', dest='window', type=int, default=2)
