@@ -20,15 +20,27 @@ log = helper.enableLog()
 def trainW2v(args):
     all = ["Accidents", "Arts", "Attacks", "Economy", "Miscellaneous", "Politics", "Science", "undefined"]
 
+    if args.force == 1:
+        files = ["./train/{}/{}/positive.txt".format(args.ontology, args.type),
+                 "./train/{}/{}/negative.txt".format(args.ontology, args.type)]
+        model = Word2VecHelper.createModel(files, name="{}_{}".format(args.ontology, args.type), merge=args.merge)
+    else:
+        model = Word2VecHelper.loadModel("{}_{}".format(args.ontology, args.type), merge=args.merge)
 
-    model = Word2VecHelper.loadModel("{}_{}".format(args.ontology,args.type))
     w2v = {w: vec for w, vec in zip(model.wv.index2word, model.wv.syn0)}
+
+    """
+        model = Word2VecHelper.loadModel("{}_{}".format(args.ontology,args.type))
+        w2v = {w: vec for w, vec in zip(model.wv.index2word, model.wv.syn0)}
+    """
+
 
     train_instances, train_labels, train_texts = Word2VecHelper.loadData(all, args, 'train')
     test_instances, test_labels, test_texts = Word2VecHelper.loadData(all, args, 'test')
 
     C = 1.0  # SVM regularization parameter
 
+    """
     if args.classifier == 'poly':
         classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
                           ("extra trees", svm.SVC(kernel="poly", degree=3, C=C))])
@@ -54,11 +66,13 @@ def trainW2v(args):
         classifier_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
                                 ("extra trees", BernoulliNB())])
     else:
-        classifier_count = Pipeline(
-        [
-         ("tf_idf", TfidfEmbeddingVectorizer(w2v)),
-         ('clf',svm.SVC(kernel='poly', C=C))]
-        )
+        """
+
+    classifier_count = Pipeline(
+    [
+     ("tf_idf", TfidfEmbeddingVectorizer(w2v)),
+     ('clf',svm.SVC(kernel='poly', C=C))]
+    )
 
     parameters = {
                  'clf__gamma': (0.5, 0.7, 1,3),
@@ -86,7 +100,8 @@ if __name__ == "__main__":
     parser.add_option('-j', '--job', dest='job', type=int, default=10)
     parser.add_option('-w', '--window', dest='window', type=int, default=2)
     parser.add_option('-s', '--size', dest='size', type=int, default=300)
-    parser.add_option('-m', '--min', dest='min_count', type=int, default=5)
+    parser.add_option('-m', '--merge', dest='merge', type=int, default=0)
     parser.add_option('-e', '--experiment', dest='experiment', type=int, default=0)
+
     opts, args = parser.parse_args()
     trainW2v(opts)
