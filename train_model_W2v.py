@@ -33,8 +33,7 @@ def trainW2v(args):
         test_instances, test_labels, test_texts = Word2VecHelper.loadData(classes, args, 'test')
 
         f = open(
-            "logs/{}_{}_{}_{}_{}.txt".format(args.ontology, args.type, args.classifier, task,
-                                             args.merge), "w")
+            "logs/{}_{}.txt".format(args.ontology, task), "w")
 
         for classifier in ['ben', 'linear', 'rbf']:
             args.classifier = classifier
@@ -43,8 +42,6 @@ def trainW2v(args):
                 args.type = _type
                 for merge in range(2):
                     args.merge = merge
-
-                    sys.stdout = f
                     if args.force == 1 or not os.path.exists("{}_{}_{}.bin".format(args.ontology, args.type, 'merged' if args.merge==1 else 'simple')):
                         files = ["./train/{}/{}/positive.txt".format(args.ontology, args.type),
                                  "./train/{}/{}/negative.txt".format(args.ontology, args.type)]
@@ -55,7 +52,7 @@ def trainW2v(args):
 
                     w2v = {w: vec for w, vec in zip(model.wv.index2word, model.wv.syn0)}
 
-                    print("========== Model", args.ontology, args.type, args.merge, task, "==========")
+                    print("========== Model", args.ontology, args.type, args.merge, task, classifier, "==========")
                     if args.classifier == 'ben':
                         classifier = Pipeline([("w2v vect", MeanEmbeddingVectorizer(w2v)),
                                                ("clf", BernoulliNB())])
@@ -66,12 +63,15 @@ def trainW2v(args):
 
                     y_score = classifier.fit(train_texts, train_labels).predict_proba(test_texts)
                     y_pred = classifier.predict(test_texts)
-
+                    f.write("========= Classification Report ==========\n")
                     print("========= Classification Report ==========")
                     print(classification_report(test_labels, y_pred))
+                    f.write(classification_report(test_labels, y_pred)+"\n")
 
                     print("========= Confusion Matrix ==========")
+                    f.write("========= Confusion Matrix ==========\n")
                     print(confusion_matrix(test_labels,y_pred, labels=classes))
+                    f.write(confusion_matrix(test_labels,y_pred, labels=classes)+"\n")
 
                     GraphHelper.savePrediction("{}_{}_{}_{}_{}".format(args.ontology,args.type,args.classifier,task, args.merge), y_pred=y_pred,y_score=y_score,classes=classes,y=test_labels )
                     GraphHelper.saveClassifier(classifier, "{}_{}_{}_{}_{}.pkl".format(args.ontology,args.type,args.classifier,task, args.merge))
