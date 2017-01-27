@@ -33,10 +33,10 @@ def trainW2v(args):
         test_instances, test_labels, test_texts = Word2VecHelper.loadData(classes, args, 'test')
 
 
-        #f = open(
-        #   "logs/{}_{}.txt".format(args.ontology, task), "w")
+        f = open(
+           "logs/{}_{}.txt".format(args.ontology, task), "w")
 
-        #sys.stdout = f
+        sys.stdout = f
 
         for classifier in ['ben', 'linear', 'rbf']:
             args.classifier = classifier
@@ -78,6 +78,11 @@ def trainW2v(args):
 
                     GraphHelper.savePrediction("{}_{}_{}_{}_{}".format(args.ontology,args.type,args.classifier,task, args.merge), y_pred=y_pred,y_score=y_score,classes=classes,y=test_labels )
                     GraphHelper.saveClassifier(classifier, "{}_{}_{}_{}_{}.pkl".format(args.ontology,args.type,args.classifier,task, args.merge))
+                    break
+                break
+            break
+        break
+
         #f.close()
 
 #trainW2v()
