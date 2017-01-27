@@ -66,15 +66,15 @@ def trainW2v(args):
 
                     y_score = classifier.fit(train_texts, train_labels).predict_proba(test_texts)
                     y_pred = classifier.predict(test_texts)
-                    f.write("========= Classification Report ==========\n")
+                    #f.write("========= Classification Report ==========\n")
                     print("========= Classification Report ==========")
                     print(classification_report(test_labels, y_pred))
-                    f.write(classification_report(test_labels, y_pred)+"\n")
+                    #f.write(classification_report(test_labels, y_pred)+"\n")
 
                     print("========= Confusion Matrix ==========")
-                    f.write("========= Confusion Matrix ==========\n")
+                    #f.write("========= Confusion Matrix ==========\n")
                     print(confusion_matrix(test_labels,y_pred, labels=classes))
-                    f.write(confusion_matrix(test_labels,y_pred, labels=classes)+"\n")
+                    #f.write(confusion_matrix(test_labels,y_pred, labels=classes)+"\n")
 
                     GraphHelper.savePrediction("{}_{}_{}_{}_{}".format(args.ontology,args.type,args.classifier,task, args.merge), y_pred=y_pred,y_score=y_score,classes=classes,y=test_labels )
                     GraphHelper.saveClassifier(classifier, "{}_{}_{}_{}_{}.pkl".format(args.ontology,args.type,args.classifier,task, args.merge))
