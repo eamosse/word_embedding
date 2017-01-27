@@ -20,9 +20,7 @@ log = helper.enableLog()
 
 def trainW2v(args):
     global classes
-    if args.experiment == 2:
-        classes = ["Accidents", "Arts", "Attacks", "Economy", "Miscellaneous", "Politics", "Science", "undefined"]
-    elif args.experiment == 1:
+    if args.experiment == 1:
         classes = ["Accidents", "Arts", "Attacks", "Economy", "Miscellaneous", "Politics", "Science"]
     else:
         classes = ['negative', 'positive']
@@ -50,7 +48,7 @@ def trainW2v(args):
     colors = cycle(['navy', 'turquoise', 'darkorange', 'cornflowerblue', 'teal'])
     lw = 2
 
-    for cl in ['ben','linear']:
+    for cl in ['linear']:
         args.classifier = cl
         print("RUNNING ", cl)
 
@@ -91,6 +89,68 @@ def trainW2v(args):
 
         print(classification_report(test_labels, y_pred))
         print(confusion_matrix(test_labels,y_pred, labels=classes))
+
+        y_pred = classifier_count.decision_function(test_texts)
+
+        # Compute Precision-Recall and plot curve
+        precision = dict()
+        recall = dict()
+        average_precision = dict()
+        #print(n_classes, test_labels.shape[1])
+        #print(n_classes, y_pred.shape[1])
+        for i in range(n_classes):
+            precision[i], recall[i], _ = precision_recall_curve(test_labels[:, i],
+                                                                y_pred[:, i])
+            average_precision[i] = average_precision_score(test_labels[:, i], y_pred[:, i])
+
+        # Compute micro-average ROC curve and ROC area
+        precision["micro"], recall["micro"], _ = precision_recall_curve(test_labels.ravel(),
+                                                                        y_pred.ravel())
+        average_precision["micro"] = average_precision_score(test_labels, y_pred,
+                                                             average="micro")
+
+        # Plot Precision-Recall curve
+        plt.clf()
+        plt.plot(recall[0], precision[0], lw=lw, color='navy',
+                 label='Precision-Recall curve')
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
+        plt.ylim([0.0, 1.05])
+        plt.xlim([0.0, 1.0])
+        plt.title('Precision-Recall example: AUC={0:0.2f}'.format(average_precision[0]))
+        plt.legend(loc="lower left")
+        plt.show()
+
+        # Plot Precision-Recall curve for each class
+        plt.clf()
+        plt.plot(recall["micro"], precision["micro"], color='gold', lw=lw,
+                 label='micro-average Precision-recall curve (area = {0:0.2f})'
+                       ''.format(average_precision["micro"]))
+        for i, color in zip(range(n_classes), colors):
+            plt.plot(recall[i], precision[i], color=color, lw=lw,
+                     label='Precision-recall curve of class {0} (area = {1:0.2f})'
+                           ''.format(i, average_precision[i]))
+
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
+        plt.title('Extension of Precision-Recall curve to multi-class')
+        plt.legend(loc="lower right")
+        plt.show()
+
+
+
+        """
+        log.debug("BUilding the classifier {} with tfidf".format(args.classifier))
+        classifier_tfidf.fit(x_train, y_train)
+        y_pred = classifier_tfidf.predict(x_test)
+        print(y_pred)
+        print(classification_report(y_test, y_pred))
+        print(confusion_matrix(y_test, y_pred, labels=classes))
+        """
+
+        #print((cross_val_score(etree_w2v, X, y, cv=10).mean()))
 
 
 #trainW2v()
