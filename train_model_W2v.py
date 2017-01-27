@@ -75,7 +75,7 @@ def trainW2v(args):
 
                     GraphHelper.savePrediction("{}_{}_{}_{}_{}".format(args.ontology,args.type,args.classifier,task, args.merge), y_pred=y_pred,y_score=y_score,classes=classes,y=test_labels )
                     GraphHelper.saveClassifier(classifier, "{}_{}_{}_{}_{}.pkl".format(args.ontology,args.type,args.classifier,task, args.merge))
-                    f.close()
+        f.close()
 
 #trainW2v()
 
