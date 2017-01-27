@@ -32,8 +32,11 @@ def trainW2v(args):
         train_instances, train_labels, train_texts = Word2VecHelper.loadData(classes, args, 'train')
         test_instances, test_labels, test_texts = Word2VecHelper.loadData(classes, args, 'test')
 
+
         f = open(
             "logs/{}_{}.txt".format(args.ontology, task), "w")
+
+        sys.stdout = f
 
         for classifier in ['ben', 'linear', 'rbf']:
             args.classifier = classifier
