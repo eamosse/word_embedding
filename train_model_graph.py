@@ -39,8 +39,10 @@ def trainW2v(args):
 
     #test_labels = label_binarize(test_labels, classes=classes)
     #train_labels = label_binarize(train_labels, classes=classes)
-    n_classes = len(classes) #test_labels.shape[1]
-    print(n_classes)
+    #n_classes = len(classes) #test_labels.shape[1]
+    y = label_binarize(test_labels, classes=classes)
+    print(y)
+    n_classes = y.shape[1]
 
     C = 2.0  # SVM regularization parameter
     gamma = 10
@@ -54,22 +56,22 @@ def trainW2v(args):
 
         if args.classifier == 'poly':
             classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
-                              ("extra trees", svm.SVC(kernel="poly", degree=degree, C=C, gamma=gamma))])
+                              ("extra trees", svm.SVC(kernel="poly", degree=degree, C=C, gamma=gamma, probability=True))])
 
             classifier_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
                               ("extra trees", svm.SVC(kernel="poly", degree=3,C=C))])
         elif args.classifier == 'linear':
             classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
-                                         ("extra trees", svm.SVC(kernel="linear", C=C))])
+                                         ("extra trees", svm.SVC(kernel="linear", C=C, probability=True))])
 
             classifier_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
-                                         ("extra trees", svm.SVC(kernel="linear", C=C))])
+                                         ("extra trees", svm.SVC(kernel="linear", C=C, probability=True))])
         elif args.classifier == 'rbf':
             classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
-                                         ("extra trees", svm.SVC(kernel='rbf', gamma=10, C=C))])
+                                         ("extra trees", svm.SVC(kernel='rbf', gamma=10, C=C, probability=True))])
 
             classifier_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
-                                         ("extra trees", svm.SVC(kernel='rbf', gamma=10, C=C))])
+                                         ("extra trees", svm.SVC(kernel='rbf', gamma=10, C=C, probability=True))])
         elif args.classifier == 'ben':
             classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
                                         ("extra trees", BernoulliNB())])
@@ -84,13 +86,13 @@ def trainW2v(args):
 
         #x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
         log.debug("BUilding the classifier {} with word count".format(args.classifier))
-        classifier_count.fit(train_texts, train_labels)
+        y_score = classifier_count.fit(train_texts, train_labels).predict_proba(test_texts)
+
         y_pred = classifier_count.predict(test_texts)
 
         print(classification_report(test_labels, y_pred))
         print(confusion_matrix(test_labels,y_pred, labels=classes))
 
-        y_pred = classifier_count.decision_function(test_texts)
 
         # Compute Precision-Recall and plot curve
         precision = dict()
@@ -99,16 +101,16 @@ def trainW2v(args):
         #print(n_classes, test_labels.shape[1])
         #print(n_classes, y_pred.shape[1])
         for i in range(n_classes):
-            precision[i], recall[i], _ = precision_recall_curve(test_labels[:, i],
-                                                                y_pred[:, i])
-            average_precision[i] = average_precision_score(test_labels[:, i], y_pred[:, i])
+            precision[i], recall[i], _ = precision_recall_curve(y[:, i],
+                                                                y_score[:, i])
+            average_precision[i] = average_precision_score(y[:, i], y_score[:, i])
 
         # Compute micro-average ROC curve and ROC area
-        precision["micro"], recall["micro"], _ = precision_recall_curve(test_labels.ravel(),
-                                                                        y_pred.ravel())
-        average_precision["micro"] = average_precision_score(test_labels, y_pred,
+        precision["micro"], recall["micro"], _ = precision_recall_curve(y.ravel(),
+                                                                        y_score.ravel())
+        average_precision["micro"] = average_precision_score(y, y_score,
                                                              average="micro")
-
+        """
         # Plot Precision-Recall curve
         plt.clf()
         plt.plot(recall[0], precision[0], lw=lw, color='navy',
@@ -120,6 +122,7 @@ def trainW2v(args):
         plt.title('Precision-Recall example: AUC={0:0.2f}'.format(average_precision[0]))
         plt.legend(loc="lower left")
         plt.show()
+        """
 
         # Plot Precision-Recall curve for each class
         plt.clf()
@@ -128,15 +131,16 @@ def trainW2v(args):
                        ''.format(average_precision["micro"]))
         for i, color in zip(range(n_classes), colors):
             plt.plot(recall[i], precision[i], color=color, lw=lw,
-                     label='Precision-recall curve of class {0} (area = {1:0.2f})'
-                           ''.format(i, average_precision[i]))
+                     label='{0} (area = {1:0.2f})'
+                           ''.format(classes[i], average_precision[i]))
 
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])
         plt.xlabel('Recall')
         plt.ylabel('Precision')
         plt.title('Extension of Precision-Recall curve to multi-class')
-        plt.legend(loc="lower right")
+        plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05),
+          ncol=3, fancybox=True)
         plt.show()
 
 

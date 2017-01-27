@@ -6,12 +6,8 @@ from optparse import OptionParser
 from helper import FileHelper, Word2VecHelper
 import helper
 from helper.VectorHelper import *
-from sklearn.metrics import precision_recall_curve
-from sklearn.metrics import average_precision_score
-import matplotlib.pyplot as plt
 classes = []
 from itertools import cycle
-from sklearn.preprocessing import label_binarize
 
 
 

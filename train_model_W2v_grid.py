@@ -71,11 +71,10 @@ def trainW2v(args):
     classifier_count = Pipeline(
     [
      ("tf_idf", TfidfEmbeddingVectorizer(w2v)),
-     ('clf',svm.SVC(kernel='poly', C=C))]
+     ('clf',svm.SVC(kernel='rbf', C=C))]
     )
 
     parameters = {
-                 'clf__gamma': (0.5, 0.7, 1,3),
                  'clf__degree': (1,5,10,15)}
 
 
