@@ -75,7 +75,7 @@ def trainW2v(args):
     )
 
     parameters = {
-                 'clf__degree': (1,5,10,15)}
+                 'clf__C': (0.5,1,2)}
 
 
     # x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     parser = OptionParser('''%prog -o ontology -t type -f force ''')
     parser.add_option('-o', '--ontology', dest='ontology', default="yago")
     parser.add_option('-t', '--type', dest='type', default="specific")
-    parser.add_option('-f', '--force', dest='force', default=1, type=int)
+    parser.add_option('-f', '--force', dest='force', default=0, type=int)
     parser.add_option('-c', '--classifier', dest='classifier', default='nb')
     parser.add_option('-j', '--job', dest='job', type=int, default=10)
     parser.add_option('-w', '--window', dest='window', type=int, default=2)

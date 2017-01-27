@@ -3,91 +3,79 @@ from sklearn import svm
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import classification_report, confusion_matrix
 from optparse import OptionParser
-from helper import FileHelper, Word2VecHelper
+from helper import FileHelper, Word2VecHelper, GraphHelper
 import helper
 from helper.VectorHelper import *
 classes = []
-from itertools import cycle
 
+import os
+import sys
 
 
 log = helper.enableLog()
 
-
 def trainW2v(args):
     global classes
-    if args.experiment == 2:
-        classes = ["Accidents", "Arts", "Attacks", "Economy", "Miscellaneous", "Politics", "Science", "undefined"]
-    elif args.experiment == 1:
-        classes = ["Accidents", "Arts", "Attacks", "Economy", "Miscellaneous", "Politics", "Science"]
-    else:
-        classes = ['negative', 'positive']
+    clazz = [["Accidents", "Arts", "Attacks", "Economy", "Miscellaneous", "Politics", "Science", "undefined"], ["Accidents", "Arts", "Attacks", "Economy", "Miscellaneous", "Politics", "Science"]]
 
-    if args.force == 1:
-        files = ["./train/{}/{}/positive.txt".format(args.ontology, args.type),
-                 "./train/{}/{}/negative.txt".format(args.ontology, args.type)]
-        model = Word2VecHelper.createModel(files, name="{}_{}".format(args.ontology, args.type), merge=args.merge)
-    else:
-        model = Word2VecHelper.loadModel("{}_{}".format(args.ontology, args.type), merge=args.merge)
-
-    w2v = {w: vec for w, vec in zip(model.wv.index2word, model.wv.syn0)}
-
-    train_instances, train_labels, train_texts = Word2VecHelper.loadData(classes,args, 'train')
-    test_instances, test_labels, test_texts = Word2VecHelper.loadData(classes,args, 'test')
-
-    #test_labels = label_binarize(test_labels, classes=classes)
-    #train_labels = label_binarize(train_labels, classes=classes)
-    n_classes = len(classes) #test_labels.shape[1]
-    print(n_classes)
+    FileHelper.create("logs")
 
     C = 2.0  # SVM regularization parameter
-    gamma = 10
+    gamma = 0.5
     degree = 6
-    colors = cycle(['navy', 'turquoise', 'darkorange', 'cornflowerblue', 'teal'])
-    lw = 2
+    types = ['generic', 'specific']
+    if args.ontology =='dbpedia':
+        types.append('normal')
 
-    for cl in ['ben','linear']:
-        args.classifier = cl
-        print("RUNNING ", cl)
+    for classes in clazz:
+        task = 'pipeline2' if len(clazz) == 8 else 'task2' if len(clazz) == 7 else 'task1'
+        train_instances, train_labels, train_texts = Word2VecHelper.loadData(classes, args, 'train')
+        test_instances, test_labels, test_texts = Word2VecHelper.loadData(classes, args, 'test')
 
-        if args.classifier == 'poly':
-            classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
-                              ("extra trees", svm.SVC(kernel="poly", degree=degree, C=C, gamma=gamma))])
+        f = open(
+            "logs/{}_{}_{}_{}_{}.txt".format(args.ontology, args.type, args.classifier, task,
+                                             args.merge), "w")
 
-            classifier_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
-                              ("extra trees", svm.SVC(kernel="poly", degree=3,C=C))])
-        elif args.classifier == 'linear':
-            classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
-                                         ("extra trees", svm.SVC(kernel="linear", C=C))])
+        for classifier in ['ben', 'linear', 'rbf']:
+            args.classifier = classifier
 
-            classifier_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
-                                         ("extra trees", svm.SVC(kernel="linear", C=C))])
-        elif args.classifier == 'rbf':
-            classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
-                                         ("extra trees", svm.SVC(kernel='rbf', gamma=10, C=C))])
+            for _type in types:
+                args.type = _type
+                for merge in range(2):
+                    args.merge = merge
 
-            classifier_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
-                                         ("extra trees", svm.SVC(kernel='rbf', gamma=10, C=C))])
-        elif args.classifier == 'ben':
-            classifier_count = Pipeline([("word2vec vectorizer", MeanEmbeddingVectorizer(w2v)),
-                                        ("extra trees", BernoulliNB())])
+                    sys.stdout = f
+                    if args.force == 1 or not os.path.exists("{}_{}_{}.bin".format(args.ontology, args.type, 'merged' if args.merge==1 else 'simple')):
+                        files = ["./train/{}/{}/positive.txt".format(args.ontology, args.type),
+                                 "./train/{}/{}/negative.txt".format(args.ontology, args.type)]
+                        model = Word2VecHelper.createModel(files, name="{}_{}".format(args.ontology, args.type),
+                                                           merge=args.merge)
+                    else:
+                        model = Word2VecHelper.loadModel("{}_{}".format(args.ontology, args.type), merge=args.merge)
 
-            classifier_tfidf = Pipeline([("word2vec vectorizer", TfidfEmbeddingVectorizer(w2v)),
-                                    ("extra trees", BernoulliNB())])
-        else:
-            classifier_count = Pipeline(
-            [("count_vectorizer", CountVectorizer(analyzer=lambda x: x)), ("multinomial nb", MultinomialNB())])
-            classifier_tfidf = Pipeline(
-            [("tfidf_vectorizer", TfidfVectorizer(analyzer=lambda x: x)), ("multinomial nb", MultinomialNB())])
+                    w2v = {w: vec for w, vec in zip(model.wv.index2word, model.wv.syn0)}
 
-        #x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
-        log.debug("BUilding the classifier {} with word count".format(args.classifier))
-        classifier_count.fit(train_texts, train_labels)
-        y_pred = classifier_count.predict(test_texts)
+                    print("========== Model", args.ontology, args.type, args.merge, task, "==========")
+                    if args.classifier == 'ben':
+                        classifier = Pipeline([("w2v vect", MeanEmbeddingVectorizer(w2v)),
+                                               ("clf", BernoulliNB())])
+                    else:
+                        classifier = Pipeline([("w2v vect", MeanEmbeddingVectorizer(w2v)),
+                                               ("clf", svm.SVC(kernel=args.classifier, degree=degree, C=C, gamma=gamma,
+                                                                       probability=True))])
 
-        print(classification_report(test_labels, y_pred))
-        print(confusion_matrix(test_labels,y_pred, labels=classes))
+                    y_score = classifier.fit(train_texts, train_labels).predict_proba(test_texts)
+                    y_pred = classifier.predict(test_texts)
 
+                    print("========= Classification Report ==========")
+                    print(classification_report(test_labels, y_pred))
+
+                    print("========= Confusion Matrix ==========")
+                    print(confusion_matrix(test_labels,y_pred, labels=classes))
+
+                    GraphHelper.savePrediction("{}_{}_{}_{}_{}".format(args.ontology,args.type,args.classifier,task, args.merge), y_pred=y_pred,y_score=y_score,classes=classes,y=test_labels )
+                    GraphHelper.saveClassifier(classifier, "{}_{}_{}_{}_{}.pkl".format(args.ontology,args.type,args.classifier,task, args.merge))
+                    f.close()
 
 #trainW2v()
 

@@ -5,6 +5,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 from optparse import OptionParser
 from helper import FileHelper, Word2VecHelper
 import helper
+import numpy as np
 from helper.VectorHelper import *
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import average_precision_score
@@ -92,7 +93,15 @@ def trainW2v(args):
 
         print(classification_report(test_labels, y_pred))
         print(confusion_matrix(test_labels,y_pred, labels=classes))
+        """
+        f = open('{}_{}_{}_{}.tsv'.format(args.ontology,args.type,args.classifier,args.merge), "w")
+        t = ""
+        for cl in classes:
+            t =  "\t" + cl if len(t) == 0 else cl
+            f.write(t)
+        """
 
+        #np.savetxt("test.csv", y_score, delimiter = ';')
 
         # Compute Precision-Recall and plot curve
         precision = dict()
@@ -110,7 +119,8 @@ def trainW2v(args):
                                                                         y_score.ravel())
         average_precision["micro"] = average_precision_score(y, y_score,
                                                              average="micro")
-        """
+
+
         # Plot Precision-Recall curve
         plt.clf()
         plt.plot(recall[0], precision[0], lw=lw, color='navy',
@@ -119,10 +129,15 @@ def trainW2v(args):
         plt.ylabel('Precision')
         plt.ylim([0.0, 1.05])
         plt.xlim([0.0, 1.0])
-        plt.title('Precision-Recall example: AUC={0:0.2f}'.format(average_precision[0]))
-        plt.legend(loc="lower left")
-        plt.show()
-        """
+        plt.title('Precision-Recall Curve: AUC={0:0.2f}'.format(average_precision[0]))
+        plt.legend(loc="upper right")
+        plt.savefig('{}_{}_{}_{}_prc.svg'.format(args.ontology, args.type, args.classifier, args.merge), format="svg",
+                    facecolor='w', edgecolor='w',
+                    orientation='portrait', papertype=None,
+                    transparent=False, bbox_inches=None, pad_inches=0.1,
+                    frameon=None)
+        #plt.show()
+
 
         # Plot Precision-Recall curve for each class
         plt.clf()
@@ -138,10 +153,19 @@ def trainW2v(args):
         plt.ylim([0.0, 1.05])
         plt.xlabel('Recall')
         plt.ylabel('Precision')
-        plt.title('Extension of Precision-Recall curve to multi-class')
+        plt.title('Precision-Recall curve for model {} {}'.format(args.ontology, args.type))
         plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.05),
           ncol=3, fancybox=True)
-        plt.show()
+        plt.savefig('{}_{}_{}_{}_average.svg'.format(args.ontology, args.type,args.classifier,args.merge), format="svg", facecolor='w', edgecolor='w',
+        orientation='portrait', papertype=None,
+        transparent=False, bbox_inches=None, pad_inches=0.1,
+        frameon=None)
+
+        from helper import GraphHelper
+        GraphHelper.savePrediction("test.npz",y_score,y_pred,test_labels,classes)
+
+
+        #plt.show()
 
 
 

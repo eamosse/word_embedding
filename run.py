@@ -2,6 +2,7 @@ from helper import FileHelper, Word2VecHelper
 from optparse import OptionParser
 import helper
 
+
 helper.enableLog()
 
 def _run(args):
