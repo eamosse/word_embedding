@@ -15,7 +15,7 @@ import sys
 
 def trainW2v(args):
     clazz = [["Accidents", "Arts", "Attacks", "Economy", "Miscellaneous", "Politics", "Science", "Sports","undefined"], ["Accidents", "Arts", "Attacks", "Economy", "Miscellaneous", "Politics", "Science", "Sports"], ['positive', 'negative']]
-    models = ['ben', 'linear']
+    models = ['ben']
     FileHelper.create("log")
 
     C = 2.0  # SVM regularization parameter
@@ -50,13 +50,13 @@ def trainW2v(args):
 
                     w2v = {w: vec for w, vec in zip(model.wv.index2word, model.wv.syn0)}
 
-                    print("========== Model", args.ontology, args.type, args.merge, task, model, "==========")
+                    print("========== Model", args.ontology, args.type, args.merge, task, args.classifier, "==========")
                     if args.classifier == 'ben':
                         classifier = Pipeline([("w2v vect", MeanEmbeddingVectorizer(w2v)),
                                                ("clf", BernoulliNB())])
                     else:
                         classifier = Pipeline([("w2v vect", MeanEmbeddingVectorizer(w2v)),
-                                               ("clf", svm.SVC(kernel=model, degree=degree, C=C, gamma=gamma,
+                                               ("clf", svm.SVC(kernel=args.classifier, degree=degree, C=C, gamma=gamma,
                                                                        probability=True))])
 
                     y_score = classifier.fit(train_texts, train_labels).predict_proba(test_texts)
@@ -71,8 +71,8 @@ def trainW2v(args):
                     print(confusion_matrix(test_labels,y_pred, labels=classes))
                     #f.write(confusion_matrix(test_labels,y_pred, labels=classes)+"\n")
 
-                    GraphHelper.savePrediction("{}_{}_{}_{}_{}".format(args.ontology,args.type,model,task, args.merge), y_pred=y_pred,y_score=y_score,classes=classes,y=test_labels )
-                    GraphHelper.saveClassifier(classifier, "{}_{}_{}_{}_{}.pkl".format(args.ontology,args.type,model,task, args.merge))
+                    GraphHelper.savePrediction("{}_{}_{}_{}_{}".format(args.ontology,args.type,args.classifier,task, args.merge), y_pred=y_pred,y_score=y_score,classes=classes,y=test_labels )
+                    GraphHelper.saveClassifier(classifier, "{}_{}_{}_{}_{}.pkl".format(args.ontology,args.type,args.classifier,task, args.merge))
 
         #f.close()
 
