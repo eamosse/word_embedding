@@ -6,7 +6,6 @@ from optparse import OptionParser
 from helper import FileHelper, Word2VecHelper, GraphHelper
 import helper
 from helper.VectorHelper import *
-classes = []
 
 import os
 import sys
@@ -15,8 +14,7 @@ import sys
 #log = helper.enableLog()
 
 def trainW2v(args):
-    global classes
-    clazz = [["Accidents", "Arts", "Attacks", "Economy", "Miscellaneous", "Politics", "Science", "undefined"], ["Accidents", "Arts", "Attacks", "Economy", "Miscellaneous", "Politics", "Science"]]
+    clazz = [["Accidents", "Arts", "Attacks", "Economy", "Miscellaneous", "Politics", "Science", "Sports","undefined"], ["Accidents", "Arts", "Attacks", "Economy", "Miscellaneous", "Politics", "Science", "Sports"], ['positive', 'negative']]
 
     FileHelper.create("logs")
 
@@ -28,14 +26,14 @@ def trainW2v(args):
         types.append('normal')
 
     for classes in clazz:
-        task = 'pipeline2' if len(clazz) == 8 else 'task2' if len(clazz) == 7 else 'task1'
+        task = 'pipeline2' if len(classes) == 8 else 'task2' if len(classes) == 7 else 'task1'
         train_instances, train_labels, train_texts = Word2VecHelper.loadData(classes, args, 'train')
         test_instances, test_labels, test_texts = Word2VecHelper.loadData(classes, args, 'test')
 
         sys.stdout = open(
-           "logs/{}_{}.txt".format(args.ontology, task), "w")
+           "logs/_{}_{}.txt".format(args.ontology, task), "w")
 
-        for classifier in ['ben', 'linear', 'rbf']:
+        for classifier in ['ben', 'linear']:
             args.classifier = classifier
 
             for _type in types:
