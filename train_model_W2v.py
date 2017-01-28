@@ -16,7 +16,7 @@ import sys
 def trainW2v(args):
     clazz = [["Accidents", "Arts", "Attacks", "Economy", "Miscellaneous", "Politics", "Science", "Sports","undefined"], ["Accidents", "Arts", "Attacks", "Economy", "Miscellaneous", "Politics", "Science", "Sports"], ['positive', 'negative']]
     models = ['ben', 'linear']
-    FileHelper.create("logs")
+    FileHelper.create("log")
 
     C = 2.0  # SVM regularization parameter
     gamma = 0.5
@@ -31,7 +31,7 @@ def trainW2v(args):
         test_instances, test_labels, test_texts = Word2VecHelper.loadData(classes, args, 'test')
 
         sys.stdout = open(
-           "logs/_{}_{}.txt".format(args.ontology, task), "w")
+           "log/_{}_{}.txt".format(args.ontology, task), "w")
 
         for model in models:
             args.classifier = model
