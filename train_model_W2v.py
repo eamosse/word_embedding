@@ -15,13 +15,13 @@ import sys
 
 def trainW2v(args):
     clazz = [["Accidents", "Arts", "Attacks", "Economy", "Miscellaneous", "Politics", "Science", "Sports","undefined"], ["Accidents", "Arts", "Attacks", "Economy", "Miscellaneous", "Politics", "Science", "Sports"], ['positive', 'negative']]
-    models = ['ben', 'linear']
+    models = ['rbf', 'poly']
     FileHelper.create("log")
 
     C = 0.5  # SVM regularization parameter
     gamma = 0.5
     degree = 6
-    types = ['rbf', 'poly']
+    types = ['generic', 'specific']
     if args.ontology =='dbpedia':
         types.append('normal')
 
