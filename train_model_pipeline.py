@@ -5,6 +5,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 from optparse import OptionParser
 from helper import FileHelper, Word2VecHelper, GraphHelper
 import helper
+from sklearn.externals import joblib
 from helper.VectorHelper import *
 
 log = helper.enableLog()

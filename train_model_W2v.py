@@ -21,7 +21,7 @@ def trainW2v(args):
     C = 0.5  # SVM regularization parameter
     gamma = 0.5
     degree = 6
-    types = ['generic', 'specific']
+    types = ['rbf', 'poly']
     if args.ontology =='dbpedia':
         types.append('normal')
 
