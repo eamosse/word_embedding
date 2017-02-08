@@ -5,8 +5,11 @@ from sklearn.metrics import classification_report, confusion_matrix
 from optparse import OptionParser
 from helper import FileHelper, Word2VecHelper, GraphHelper
 import helper
+import numpy as np
 from sklearn.externals import joblib
 from helper.VectorHelper import *
+from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import permutation_test_score
 
 log = helper.enableLog()
 
@@ -29,7 +32,7 @@ def trainW2v(args):
 
     gamma = 0.5
     degree = 0.5
-    cl = ["ben","linear", 'rbf']
+    cl = ["ben"]
     C = 2.0  # SVM regularization parameter
 
     for classifier in cl:
@@ -55,33 +58,15 @@ def trainW2v(args):
 
         #x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
         log.debug("Train the binary model".format(args.classifier))
-        classifier.fit(train_texts, train_labels)
-        y_pred = classifier.predict(test_texts)
+        #classifier.fit(train_texts, train_labels)
+        #y_pred = classifier.predict(test_texts)
 
-        print(classification_report(test_labels, y_pred))
-        print(confusion_matrix(test_labels,y_pred, labels=binaries))
+        #print(classification_report(test_labels, y_pred))
+        #print(confusion_matrix(test_labels,y_pred, labels=binaries))
 
-        GraphHelper.saveClassifier(classifier,"models/{}_{}_{}_{}_{}.pkl".format(args.ontology, args.type, args.classifier,
-                                                                      "binary", args.merge))
-
-        #build the training and test file for task 2
-        ids = []
-        for i, label in enumerate(y_pred):
-            if label == 'positive':
-                ids.append(test_instances[i])
-        eval_file = FileHelper.generateFileForIds(ids=ids, ontology=args.ontology, type=args.type)
-
-        train_instances_multi, train_labels_multi, train_texts_multi = Word2VecHelper.loadData(all, args, 'train')
-        _, test_labels_multi, test_texts_multi = Word2VecHelper.dataFromFile(eval_file)
-
-        #Train the multi class model
-        classifier.fit(train_texts_multi, train_labels_multi)
-        y_pred = classifier.predict(test_texts_multi)
-        print(classification_report(test_labels_multi, y_pred))
-        print(confusion_matrix(test_labels_multi, y_pred, labels=all))
-        GraphHelper.saveClassifier(classifier, "models/{}_{}_{}_{}_{}.pkl".format(args.ontology, args.type, args.classifier,
-                                                                              "multi", args.merge))
-
+        score, permutation_scores, pvalue = permutation_test_score(
+        classifier, train_texts, train_labels, scoring="accuracy", cv=None, n_permutations=100, n_jobs=1)
+        print("Classification score %s (pvalue : %s)" % (score, pvalue))
 
 
 #trainW2v()
@@ -90,7 +75,7 @@ if __name__ == "__main__":
     parser = OptionParser('''%prog -o ontology -t type -f force ''')
     parser.add_option('-o', '--ontology', dest='ontology', default="yago")
     parser.add_option('-t', '--type', dest='type', default="specific")
-    parser.add_option('-f', '--force', dest='force', default=1, type=int)
+    parser.add_option('-f', '--force', dest='force', default=0, type=int)
     parser.add_option('-c', '--classifier', dest='classifier', default='ben')
     parser.add_option('-j', '--job', dest='job', type=int, default=10)
     parser.add_option('-w', '--window', dest='window', type=int, default=2)

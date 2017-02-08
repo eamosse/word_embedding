@@ -46,21 +46,20 @@ def trainW2v(args):
                 #this file contains tweets classified as related to events by the binary model
                 eval_file = FileHelper.generateFileForIds(ids=ids, ontology=args.ontology, type=args.type)
                 #we then use the positive tweets as instances for testing the multi model
-                _, test_labels_multi, test_texts_multi = Word2VecHelper.dataFromFile(eval_file)
-                print("==========","Model for", args.ontology, args.type, args.classifier, args.merge,"==========")
+                test_ids, test_labels_multi, test_texts_multi = Word2VecHelper.dataFromFile(eval_file)
+                #print("==========","Model for", args.ontology, args.type, args.classifier, args.merge,"==========")
                 #Train the multi class model
                 y_pred = multi_model.predict(test_texts_multi)
-                print(classification_report(test_labels_multi, y_pred))
-                print(confusion_matrix(test_labels_multi, y_pred, labels=all))
+                #print(classification_report(test_labels_multi, y_pred))
+                #print(confusion_matrix(test_labels_multi, y_pred, labels=all))
                 y_score = multi_model.predict_proba(test_texts_multi)
-                GraphHelper.savePrediction(
-                    "{}_{}_{}_{}_{}".format(args.ontology, args.type, args.classifier, "pipeline1", args.merge), y_pred=y_pred,
-                    y_score=y_score, classes=all, y=test_labels_multi)
+                GraphHelper.savePredictionForStatistics(
+                    "{}_{}_{}_{}_{}".format(args.ontology, args.type, args.classifier, "pipeline1", args.merge), test_ids,test_labels_multi,y_pred)
 
 
 if __name__ == "__main__":
     parser = OptionParser('''%prog -o ontology -t type -f force ''')
-    parser.add_option('-o', '--ontology', dest='ontology', default="dbpedia")
+    parser.add_option('-o', '--ontology', dest='ontology', default="yago")
     parser.add_option('-t', '--type', dest='type', default="specific")
     parser.add_option('-f', '--force', dest='force', default=1, type=int)
     parser.add_option('-c', '--classifier', dest='classifier', default='ben')
